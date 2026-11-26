@@ -1,9 +1,10 @@
-"""Draw the app icon (green rounded square + white download arrow) as a macOS iconset or Windows .ico.
+"""Draw the app icon (option B: black/white split + green download button) as a macOS iconset or Windows .ico.
 
     python tools/make_icon.py assets/icon.iconset   # Mac, then: iconutil -c icns ...
     python tools/make_icon.py assets/ClipSaver.ico   # Windows
 Standard library only.
 """
+import math
 import struct
 import sys
 import zlib
@@ -46,19 +47,45 @@ def seg_dist(x, y, ax, ay, bx, by):
 
 
 def pixel(x, y, px):
-    # background: very rounded square (matches the app's sidebar logo), green
+    """Option B: black / white diagonal split, a cross on the black half, a loop on
+    the white half, and a green download button in the middle (original shapes,
+    not the X or Threads logos)."""
     d = rounded_box(x, y, 0.5, 0.5, 0.41, 0.41, 0.18)
     alpha = clamp(0.5 - d / px)
     if alpha <= 0:
         return (0, 0, 0, 0)
-    r, g, b = 0x22 / 255, 0xc5 / 255, 0x5e / 255
-    # white download arrow: stem, chevron, tray line (round-capped strokes)
-    w = 0.045
-    strokes = [(0.5, 0.26, 0.5, 0.58), (0.36, 0.45, 0.5, 0.59), (0.64, 0.45, 0.5, 0.59), (0.31, 0.73, 0.69, 0.73)]
-    dist = min(seg_dist(x, y, *s) for s in strokes) - w
-    white = clamp(0.5 - dist / px)
-    r, g, b = (r + (1 - r) * white, g + (1 - g) * white, b + (1 - b) * white)
-    return (int(r * 255), int(g * 255), int(b * 255), int(alpha * 255))
+    black, white, green = (0.07, 0.07, 0.08), (0.96, 0.96, 0.96), (0x22 / 255, 0xc5 / 255, 0x5e / 255)
+
+    def mix(a, b, t):
+        return tuple(a[k] + (b[k] - a[k]) * t for k in range(3))
+
+    # diagonal split (anti-aliased): top-left black, bottom-right white
+    t = clamp(0.5 + ((x + y) - 1.0) / (px * 1.41))
+    col = mix(black, white, t)
+    # thin grey rim so the white half stays visible on light backgrounds
+    rim = clamp(1 - abs(d + px * 1.2) / (px * 1.2)) * t
+    col = mix(col, (0.80, 0.80, 0.82), rim * 0.9)
+    w = 0.028
+    # cross on the black half
+    cross = min(seg_dist(x, y, 0.20, 0.20, 0.33, 0.33), seg_dist(x, y, 0.33, 0.20, 0.20, 0.33)) - w
+    col = mix(col, white, clamp(0.5 - cross / px))
+    # loop on the white half: 3/4 circle + short tail
+    cx, cy, rr = 0.725, 0.705, 0.075
+    ang = math.atan2(y - cy, x - cx)            # y grows downward
+    gap = (math.pi / 2 < ang <= math.pi)        # leave the lower-left quarter open
+    ring = abs(((x - cx) ** 2 + (y - cy) ** 2) ** 0.5 - rr) - w
+    if gap:
+        ring = 1.0
+    ring = min(ring, seg_dist(x, y, cx, cy + rr, cx - 0.05, cy + rr) - w,
+               ((x - cx + rr) ** 2 + (y - cy) ** 2) ** 0.5 - w)
+    col = mix(col, black, clamp(0.5 - ring / px))
+    # green download button in the middle
+    disc = ((x - 0.5) ** 2 + (y - 0.5) ** 2) ** 0.5 - 0.175
+    col = mix(col, green, clamp(0.5 - disc / px))
+    arrow = min(seg_dist(x, y, 0.5, 0.41, 0.5, 0.57), seg_dist(x, y, 0.43, 0.505, 0.5, 0.575),
+                seg_dist(x, y, 0.57, 0.505, 0.5, 0.575)) - 0.026
+    col = mix(col, (1, 1, 1), clamp(0.5 - arrow / px) * clamp(0.5 - disc / px))
+    return (int(col[0] * 255), int(col[1] * 255), int(col[2] * 255), int(alpha * 255))
 
 
 def ico(path, sizes=(16, 24, 32, 48, 64, 128, 256)):

@@ -20,7 +20,7 @@
 
 ## Not verified yet
 - On the user's own Mac: Gatekeeper first open, how the window looks (CI only proves it opens/closes), "Show in Finder", Paste.
-- Icon: user was offered options A–D (X/Threads hint without their logos); shipped a rounder green download-arrow icon meanwhile.
+- Icon: option B (black/white split, cross + loop, green download button) — user picked it 2026-11-26.
 
 ## Decisions
 - No yt-dlp / Playwright: X syndication endpoint + Threads embed page are enough and keep the app ~8 MB.
