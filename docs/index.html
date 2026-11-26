@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ClipSaver — 贴个链接，把 X 和 Threads 的视频存下来</title>
-<meta name="description" content="Mac 小工具：粘贴 X 或 Threads 帖子链接，列出所有视频，分清本帖、引用帖和广告卡片，一键保存 mp4。">
+<meta name="description" content="Mac / Windows 小工具：粘贴 X 或 Threads 帖子链接，列出所有视频，分清本帖、引用帖和广告卡片，一键保存 mp4。">
 <link rel="icon" href="assets/icon.png">
 <style>
   :root {
@@ -77,6 +77,44 @@
   .shot .bar { display: flex; gap: 6px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
   .shot .bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
   .shot img { display: block; width: 100%; height: auto; }
+  .shot .zoom { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; position: relative; }
+  .shot .zoom::after {
+    content: "点击放大"; position: absolute; right: 10px; bottom: 10px;
+    background: rgba(23,32,46,.72); color: #fff; font-size: .78rem; padding: 2px 10px; border-radius: 99px;
+    opacity: 0; transition: opacity .2s;
+  }
+  .shot .zoom:hover::after, .shot .zoom:focus-visible::after { opacity: 1; }
+  .shot .zoom:focus-visible { outline: 3px solid var(--blue); outline-offset: -3px; }
+  .shot .frame { transition: transform .2s, box-shadow .2s; }
+  .shot .frame:hover { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(23,32,46,.18); }
+
+  /* lightbox */
+  .lightbox {
+    border: 0; padding: 0; background: transparent; max-width: none; max-height: none;
+    width: 100vw; height: 100vh; margin: 0;
+  }
+  .lightbox::backdrop { background: rgba(8,12,20,.86); }
+  .lightbox[open] { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  .lightbox img {
+    max-width: min(1100px, calc(100vw - 32px)); max-height: calc(100vh - 120px);
+    width: auto; height: auto; border-radius: 12px; box-shadow: 0 24px 60px rgba(0,0,0,.5); background: #fff;
+    cursor: zoom-out;
+  }
+  .lightbox p { color: #e8ecf3; font-size: .95rem; text-align: center; padding: 0 16px; }
+  .lb-btn {
+    position: fixed; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer;
+    background: rgba(255,255,255,.14); color: #fff; font-size: 22px; line-height: 44px; text-align: center;
+  }
+  .lb-btn:hover { background: rgba(255,255,255,.26); }
+  .lb-close { top: 16px; right: 16px; }
+  .lb-prev { left: 16px; top: 50%; transform: translateY(-50%); }
+  .lb-next { right: 16px; top: 50%; transform: translateY(-50%); }
+  @media (max-width: 680px) {
+    .lb-prev, .lb-next { top: auto; bottom: 20px; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shot .frame { transition: none; }
+  }
   .shot figcaption { margin-top: 12px; color: var(--muted); font-size: .9rem; }
   .shot figcaption b { display: block; color: var(--ink); font-size: 1rem; }
 
@@ -111,6 +149,12 @@
   .steps h3 { font-size: 1rem; margin-bottom: 2px; }
   .steps p { color: var(--muted); font-size: .93rem; }
 
+  .os-tabs { display: inline-flex; gap: 4px; padding: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; margin-bottom: 6px; }
+  .os-tabs button { font: inherit; font-size: .93rem; border: 0; background: none; color: var(--muted); padding: 4px 18px; border-radius: 999px; cursor: pointer; }
+  .os-tabs button[aria-selected="true"] { background: var(--blue); color: #fff; }
+  .os-tabs button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+  .note a { color: var(--muted); }
+
   .faq { display: grid; gap: 10px; }
   .faq b { display: block; }
 
@@ -133,17 +177,21 @@
   <p class="sub">一条帖子里有好几个视频、视频其实在被引用的帖子里，它都能分清楚。</p>
   <div class="badges">
     <img src="https://img.shields.io/badge/macOS-Apple_Silicon-black?logo=apple" alt="macOS Apple Silicon">
+    <img src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4" alt="Windows 10 / 11">
     <img src="https://img.shields.io/github/v/release/skot-chen/clip-saver?label=%E7%89%88%E6%9C%AC" alt="最新版本">
     <img src="https://img.shields.io/badge/%E6%95%B0%E6%8D%AE-%E4%B8%8D%E4%B8%8A%E4%BC%A0-2563eb" alt="不上传任何数据">
   </div>
   <div class="dl">
-    <a class="btn" href="https://github.com/skot-chen/clip-saver/releases/latest/download/ClipSaver-macOS-arm64.dmg">
+    <a class="btn" id="dl-mac" href="https://github.com/skot-chen/clip-saver/releases/latest/download/ClipSaver-macOS-arm64.dmg">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
-      下载 Mac 版 dmg
+      Mac 版 dmg
     </a>
-    <a class="btn ghost" href="https://github.com/skot-chen/clip-saver">GitHub 仓库</a>
+    <a class="btn" id="dl-win" href="https://github.com/skot-chen/clip-saver/releases/latest/download/ClipSaver-Windows.exe">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+      Windows 版 exe
+    </a>
   </div>
-  <p class="note">Apple 芯片（M1 / M2 / M3 / M4）· 约 8 MB · 不用装别的东西</p>
+  <p class="note">Mac：Apple 芯片（M1–M4）· 约 10 MB　|　Windows：10 / 11，64 位 · 约 10 MB<br>都不用安装别的东西 · <a href="https://github.com/skot-chen/clip-saver">GitHub 仓库</a></p>
 </header>
 
 <div class="wrap">
@@ -151,12 +199,12 @@
   <div class="shots">
     <figure class="shot">
       <div class="frame"><div class="bar"><i></i><i></i><i></i></div>
-        <img src="assets/shot-mixed.jpg" alt="一条 X 帖子：本帖视频默认勾选，引用帖里的视频单独标出" width="772" height="612"></div>
+        <button class="zoom" type="button" aria-label="放大查看截图"><img src="assets/shot-mixed.jpg" alt="一条 X 帖子：本帖视频默认勾选，引用帖里的视频单独标出" width="772" height="612"></button></div>
       <figcaption><b>分清视频从哪来</b>本帖自己的视频默认勾选，引用帖里的单独标出来</figcaption>
     </figure>
     <figure class="shot">
       <div class="frame"><div class="bar"><i></i><i></i><i></i></div>
-        <img src="assets/shot-carousel.jpg" alt="一条 Threads 轮播帖：4 个视频全部下载完成" width="772" height="590"></div>
+        <button class="zoom" type="button" aria-label="放大查看截图"><img src="assets/shot-carousel.jpg" alt="一条 Threads 轮播帖：4 个视频全部下载完成" width="772" height="590"></button></div>
       <figcaption><b>多个视频一次存</b>Threads 轮播里的 4 段视频，勾选后同时下载</figcaption>
     </figure>
   </div>
@@ -169,7 +217,7 @@
       <div><b>默认最高画质</b><p>自动选最清楚的版本，也可以换小一点的。存下来是普通 mp4，有画面也有声音。</p></div>
       <div><b>直接联网，代理可选</b><p>平时不用设置。网络不通时，在设置里填一个代理地址就行。</p></div>
       <div><b>不留记录</b><p>没有账号、没有历史记录，不上传任何东西。电脑上只多出你下载的视频。</p></div>
-      <div><b>用完就走</b><p>没有窗口，Dock 里也不占图标，在浏览器页面里操作。关掉页面，它过一会儿会自己退出。</p></div>
+      <div><b>用完就走</b><p>没有自己的窗口，在浏览器页面里操作。关掉页面，它过一会儿会自己退出。</p></div>
     </div>
   </section>
 
@@ -185,10 +233,14 @@
 
   <section class="block">
     <h2>安装</h2>
-    <ol class="steps">
+    <div class="os-tabs" role="tablist">
+      <button type="button" role="tab" id="tab-mac" aria-selected="true" aria-controls="panel-mac">Mac</button>
+      <button type="button" role="tab" id="tab-win" aria-selected="false" aria-controls="panel-win">Windows</button>
+    </div>
+    <ol class="steps" id="panel-mac" role="tabpanel" aria-labelledby="tab-mac">
       <li><div>
         <h3>下载</h3>
-        <p>点上面的按钮，下载 <code>ClipSaver-macOS-arm64.dmg</code>。</p>
+        <p>点上面的「Mac 版 dmg」，下载 <code>ClipSaver-macOS-arm64.dmg</code>。</p>
       </div></li>
       <li><div>
         <h3>拖进「应用程序」</h3>
@@ -201,12 +253,26 @@
         <pre>xattr -cr /Applications/ClipSaver.app</pre>
       </div></li>
     </ol>
+    <ol class="steps" id="panel-win" role="tabpanel" aria-labelledby="tab-win" hidden>
+      <li><div>
+        <h3>下载</h3>
+        <p>点上面的「Windows 版 exe」，下载 <code>ClipSaver-Windows.exe</code>。如果浏览器提示"不常下载"，点「…」→「保留」。</p>
+      </div></li>
+      <li><div>
+        <h3>放到顺手的地方</h3>
+        <p>不用安装，这一个文件就是整个程序。可以把它放到桌面，或者任何你找得到的文件夹里。</p>
+      </div></li>
+      <li><div>
+        <h3>第一次打开</h3>
+        <p>这个软件没有付费购买签名证书，所以第一次双击时 Windows 可能会显示"Windows 已保护你的电脑"。点 <b>「更多信息」</b>，再点 <b>「仍要运行」</b>，之后就能直接双击打开了。</p>
+      </div></li>
+    </ol>
   </section>
 
   <section class="block">
     <h2>使用</h2>
     <ol class="steps">
-      <li><div><h3>双击 ClipSaver</h3><p>浏览器会自动打开它的页面。</p></div></li>
+      <li><div><h3>双击 ClipSaver</h3><p>浏览器会自动打开它的页面。程序没有自己的窗口，Mac 的 Dock 和 Windows 的任务栏里都不会出现图标。</p></div></li>
       <li><div><h3>粘贴链接，点「查找视频」</h3><p>帖子里所有能下载的视频都会列出来。</p></div></li>
       <li><div><h3>勾选，点「下载选中的」</h3><p>视频保存在「下载」文件夹，文件名像 <code>x_推文编号_1.mp4</code>。点「在文件夹中显示」可以直接找到。</p></div></li>
     </ol>
@@ -227,6 +293,72 @@
 <footer>
   个人做的小工具，只用来保存你有权保存的视频。有问题请到 <a href="https://github.com/skot-chen/clip-saver/issues">GitHub 提 Issue</a>
 </footer>
+
+<dialog class="lightbox" id="lightbox" aria-label="截图大图">
+  <img id="lb-img" alt="">
+  <p id="lb-cap"></p>
+  <button class="lb-btn lb-close" type="button" aria-label="关闭">✕</button>
+  <button class="lb-btn lb-prev" type="button" aria-label="上一张">‹</button>
+  <button class="lb-btn lb-next" type="button" aria-label="下一张">›</button>
+</dialog>
+
+<script>
+// Put the visitor's own system first: its download button stays filled, the other turns outlined,
+// and the install steps open on the matching tab.
+(() => {
+  const isWin = /Windows/i.test(navigator.userAgent);
+  const mine = document.getElementById(isWin ? 'dl-win' : 'dl-mac');
+  const other = document.getElementById(isWin ? 'dl-mac' : 'dl-win');
+  other.classList.add('ghost');
+  mine.parentNode.insertBefore(mine, mine.parentNode.firstChild);
+
+  const tabs = { mac: document.getElementById('tab-mac'), win: document.getElementById('tab-win') };
+  function pick(os) {
+    for (const k of Object.keys(tabs)) {
+      const on = k === os;
+      tabs[k].setAttribute('aria-selected', String(on));
+      document.getElementById('panel-' + k).hidden = !on;
+    }
+  }
+  tabs.mac.addEventListener('click', () => pick('mac'));
+  tabs.win.addEventListener('click', () => pick('win'));
+  pick(isWin ? 'win' : 'mac');
+})();
+
+(() => {
+  const box = document.getElementById('lightbox');
+  const big = document.getElementById('lb-img');
+  const cap = document.getElementById('lb-cap');
+  const shots = [...document.querySelectorAll('.shot')];
+  let index = 0;
+
+  function show(i) {
+    index = (i + shots.length) % shots.length;
+    const img = shots[index].querySelector('img');
+    big.src = img.src;
+    big.alt = img.alt;
+    cap.textContent = shots[index].querySelector('figcaption').innerText.replace(/\n+/g, ' · ');
+  }
+
+  shots.forEach((shot, i) => {
+    shot.querySelector('.zoom').addEventListener('click', () => {
+      show(i);
+      box.showModal();
+    });
+  });
+
+  box.querySelector('.lb-close').addEventListener('click', () => box.close());
+  box.querySelector('.lb-prev').addEventListener('click', () => show(index - 1));
+  box.querySelector('.lb-next').addEventListener('click', () => show(index + 1));
+  big.addEventListener('click', () => box.close());
+  // click on the dark area (not on the picture or buttons) closes it
+  box.addEventListener('click', (e) => { if (e.target === box || e.target === cap) box.close(); });
+  box.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') show(index - 1);
+    if (e.key === 'ArrowRight') show(index + 1);
+  });
+})();
+</script>
 
 </body>
 </html>

@@ -1,5 +1,6 @@
-name: Build Mac app
+name: Build apps
 
+# Push a tag like v1.2.3 -> build Mac + Windows, test both for real, publish a release.
 on:
   push:
     tags: ['v*']
@@ -13,7 +14,6 @@ jobs:
     runs-on: macos-latest   # Apple silicon (M1/M2/M3/M4)
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -33,7 +33,6 @@ jobs:
           pip install pyinstaller==6.11.1
           export APP_VERSION="${APP_VERSION#v}"
           pyinstaller --noconfirm ClipSaver.spec
-          ls -la dist
 
       - name: Test the packaged app on this Mac (real downloads)
         run: |
@@ -50,9 +49,8 @@ jobs:
           ln -s /Applications dmg/Applications
           hdiutil create -volname ClipSaver -srcfolder dmg -fs HFS+ -format UDZO -ov dist/ClipSaver-macOS-arm64.dmg
           hdiutil verify dist/ClipSaver-macOS-arm64.dmg
-          # open the dmg like a user would and check the app inside
+          # open the dmg like a user would and check what is inside
           hdiutil attach -nobrowse -mountpoint /tmp/cs dist/ClipSaver-macOS-arm64.dmg
-          ls -la /tmp/cs
           test -x /tmp/cs/ClipSaver.app/Contents/MacOS/ClipSaver
           test -L /tmp/cs/Applications
           hdiutil detach /tmp/cs
@@ -60,12 +58,63 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ClipSaver-mac
+          name: mac
           path: dist/ClipSaver-macOS-arm64.dmg
 
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests -t . -v
+
+      - name: Build ClipSaver.exe
+        run: |
+          python tools/make_icon.py assets/ClipSaver.ico
+          pip install pyinstaller==6.11.1
+          pyinstaller --noconfirm --onefile --noconsole --name ClipSaver \
+            --icon assets/ClipSaver.ico \
+            --add-data "clipsaver/ui.html;clipsaver" \
+            --exclude-module tkinter --exclude-module unittest \
+            main.py
+          mv dist/ClipSaver.exe dist/ClipSaver-Windows.exe
+          ls -la dist
+
+      - name: Test the packaged exe on Windows (real downloads)
+        run: |
+          OUT="$RUNNER_TEMP\\out"
+          mkdir -p "$OUT"
+          CLIPSAVER_NO_BROWSER=1 CLIPSAVER_DIR="$OUT" dist/ClipSaver-Windows.exe &
+          python tests/smoke_live.py http://127.0.0.1:8790 "$OUT"
+          curl -s -X POST -d '{}' http://127.0.0.1:8790/api/quit
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/ClipSaver-Windows.exe
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: [mac, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
       - name: Publish release
-        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" dist/ClipSaver-macOS-arm64.dmg             --title "ClipSaver ${{ github.ref_name }}"             --notes-file RELEASE_NOTES.md
+          ls -la out
+          gh release create "${{ github.ref_name }}" out/ClipSaver-macOS-arm64.dmg out/ClipSaver-Windows.exe \
+            --title "ClipSaver ${{ github.ref_name }}" \
+            --notes-file RELEASE_NOTES.md

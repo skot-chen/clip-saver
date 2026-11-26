@@ -89,7 +89,7 @@ def reveal(path):
     if sys.platform == 'darwin':
         subprocess.Popen(['open', '-R', path])
     elif sys.platform.startswith('win'):
-        subprocess.Popen(['explorer', '/select,', path])
+        subprocess.Popen(f'explorer /select,"{path}"')
     else:
         subprocess.Popen(['xdg-open', str(Path(path).parent)])
 
@@ -201,7 +201,8 @@ def main():
     except OSError:
         httpd = ThreadingHTTPServer(('127.0.0.1', 0), Handler)  # port taken: any free one
     url = f'http://127.0.0.1:{httpd.server_address[1]}/'
-    print(f'ClipSaver running at {url}', flush=True)
+    if sys.stdout:  # None inside a windowed (no console) build
+        print(f'ClipSaver running at {url}', flush=True)
 
     def idle_watch():
         while True:

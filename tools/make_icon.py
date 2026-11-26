@@ -1,6 +1,7 @@
 """Draw the app icon (blue rounded square + white play-and-download mark) as a macOS iconset.
 
-    python tools/make_icon.py assets/icon.iconset   # then: iconutil -c icns ...
+    python tools/make_icon.py assets/icon.iconset   # Mac, then: iconutil -c icns ...
+    python tools/make_icon.py assets/ClipSaver.ico   # Windows
 Standard library only.
 """
 import struct
@@ -57,6 +58,24 @@ def pixel(x, y, px):
     return (int(r * 255), int(g * 255), int(b * 255), int(alpha * 255))
 
 
+def ico(path, sizes=(16, 24, 32, 48, 64, 128, 256)):
+    # Windows .ico whose entries are PNG images (supported since Windows Vista).
+    pngs = []
+    for size in sizes:
+        tmp = Path(str(path) + f'.{size}.png')
+        png(tmp, size, pixel)
+        pngs.append((size, tmp.read_bytes()))
+        tmp.unlink()
+    header = struct.pack('<HHH', 0, 1, len(pngs))
+    offset = 6 + 16 * len(pngs)
+    entries, blobs = b'', b''
+    for size, data in pngs:
+        s = 0 if size == 256 else size
+        entries += struct.pack('<BBBBHHII', s, s, 0, 0, 1, 32, len(data), offset + len(blobs))
+        blobs += data
+    Path(path).write_bytes(header + entries + blobs)
+
+
 def main(out):
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -66,4 +85,9 @@ def main(out):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1] if len(sys.argv) > 1 else 'assets/icon.iconset')
+    target = sys.argv[1] if len(sys.argv) > 1 else 'assets/icon.iconset'
+    if target.endswith('.ico'):
+        Path(target).parent.mkdir(parents=True, exist_ok=True)
+        ico(target)
+    else:
+        main(target)

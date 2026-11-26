@@ -1,6 +1,6 @@
 # ClipSaver
 
-A small Mac app for saving videos from **X (Twitter)** and **Threads** posts.
+A small Mac / Windows app for saving videos from **X (Twitter)** and **Threads** posts.
 
 **介绍页 / Homepage：https://skot-chen.github.io/clip-saver/**
 
@@ -25,9 +25,15 @@ A small Mac app for saving videos from **X (Twitter)** and **Threads** posts.
      ```
    以后就可以直接双击打开了。
 
+## 下载和安装（Windows 10 / 11）
+
+1. 下载 [ClipSaver-Windows.exe](https://github.com/skot-chen/clip-saver/releases/latest/download/ClipSaver-Windows.exe)。如果浏览器提示"不常下载"，点「…」→「保留」。
+2. 不用安装，这一个文件就是整个程序。放到桌面或任何文件夹都行。
+3. **第一次打开**：如果显示"Windows 已保护你的电脑"，点「更多信息」→「仍要运行」。以后就可以直接双击打开了。
+
 ## 使用
 
-- 双击 ClipSaver，浏览器会自动打开它的页面。程序本身没有窗口，Dock 栏里也不会出现图标。
+- 双击 ClipSaver，浏览器会自动打开它的页面。程序本身没有窗口，Mac 的 Dock 和 Windows 的任务栏里都不会出现图标。
 - 粘贴链接 → 点「查找视频」→ 勾选 → 点「下载选中的」。
 - 视频保存在「下载」文件夹，文件名像 `x_推文编号_1.mp4`、`threads_帖子编号.mp4`。
 - 用完点右上角「退出」。如果直接关掉浏览器页面，程序大约 2 分钟后会自己退出。
