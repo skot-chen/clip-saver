@@ -41,3 +41,10 @@
 - Settings > Network = proxy switch + list with live "可用 · ms / 无法使用" per route (user's iOS-style design).
 - Threads videos missing from the embed page (e.g. shared from Instagram) are read by a hidden pywebview window (window mode only). Found via the user's failing share link.
 - tests/net_check.py: stand-in HTTP/SOCKS5 proxies, 11 live scenarios; runs in CI. window_check also reads such a Threads post through the hidden window.
+
+## v0.7.0 (2026-11-26)
+- User feedback from their Mac: all routes failed in v0.6.1 (likely missing CA certs in the bundled Python) -> certifi bundled, ssl context everywhere.
+- Proxies are MANUAL only (user asked: no auto-detect). Telegram-style list: add/delete, click row = first (tick), per-proxy test vs X and Threads. Switch on: tick proxy -> other proxies -> direct (mirrors their skills that tried 7892/7897/7890 in turn). Switch off (default): direct.
+- Errors selectable + raw detail + Copy error details (server /api/copy). pywebview text_select=True.
+- One main button: Paste link (empty) / Find videos (has text) + 3-step hint.
+- 中/EN switch in app (clipsaver/i18n.py for server messages) and on the homepage (both texts in page, html[data-lang]).

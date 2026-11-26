@@ -19,7 +19,9 @@ jobs:
           python-version: '3.12'
 
       - name: Unit tests
-        run: python -m unittest discover -s tests -t . -v
+        run: |
+          pip install certifi
+          python -m unittest discover -s tests -t . -v
 
       - name: Network routes (system proxy, HTTP/SOCKS5 ports, fallbacks)
         run: python tests/net_check.py
@@ -28,7 +30,7 @@ jobs:
         env:
           APP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'v0.0.0' }}
         run: |
-          pip install pyinstaller==6.11.1 pywebview==5.4
+          pip install pyinstaller==6.11.1 pywebview==5.4 certifi
           export APP_VERSION="${APP_VERSION#v}"
           pyinstaller --noconfirm ClipSaver.spec
 
@@ -77,14 +79,16 @@ jobs:
           python-version: '3.12'
 
       - name: Unit tests
-        run: python -m unittest discover -s tests -t . -v
+        run: |
+          pip install certifi
+          python -m unittest discover -s tests -t . -v
 
       - name: Network routes (system proxy, HTTP/SOCKS5 ports, fallbacks)
         run: python tests/net_check.py
 
       - name: Build ClipSaver.exe
         run: |
-          pip install pyinstaller==6.11.1 pywebview==5.4
+          pip install pyinstaller==6.11.1 pywebview==5.4 certifi
           pyinstaller --noconfirm --onefile --noconsole --name ClipSaver \
             --icon art/ClipSaver.ico \
             --add-data "clipsaver/ui.html;clipsaver" \

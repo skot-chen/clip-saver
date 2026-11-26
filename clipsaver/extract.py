@@ -16,37 +16,44 @@ import urllib.parse
 import urllib.request
 
 from . import net
+from .i18n import tr
 
 UA = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36')
 
 
 class ExtractError(Exception):
-    """Error with a message that can be shown to the user as-is."""
+    """Error with a message that can be shown to the user as-is (+ raw detail)."""
+
+    def __init__(self, message, detail=''):
+        super().__init__(message)
+        self.detail = detail
 
 
 # ---------------------------------------------------------------- network
 
 class Net:
-    """Proxy switch on/off + proxies the user added (see net.py for the order)."""
+    """Proxy switch on/off + the user's proxy list (✓ one first). See net.py."""
 
-    def __init__(self, enabled=True, manual=()):
-        self.enabled, self.manual, self.used = enabled, list(manual or ()), None
+    def __init__(self, enabled=False, proxies=()):
+        self.enabled, self.proxies, self.used = enabled, list(proxies or ()), None
 
 
 def fetch(netcfg, url, headers=None, timeout=20):
     req = urllib.request.Request(url, headers={'User-Agent': UA, **(headers or {})})
     try:
-        resp, route = net.open_url(req, netcfg.enabled, netcfg.manual, timeout)
+        resp, route = net.open_url(req, netcfg.enabled, netcfg.proxies, timeout)
         netcfg.used = route.describe()
         with resp as r:
             return r.geturl(), r.read()
     except urllib.error.HTTPError as e:
-        raise ExtractError(f'网站返回错误 {e.code}（链接可能失效或帖子不公开）') from e
+        raise ExtractError(tr(f'网站返回错误 {e.code}（链接可能失效或帖子不公开）',
+                              f'The site returned error {e.code} (the link may be broken or the post private)'),
+                           f'HTTP {e.code} {url}') from e
     except net.NetError as e:
-        raise ExtractError(str(e)) from e
+        raise ExtractError(str(e), e.detail) from e
     except (urllib.error.URLError, TimeoutError, OSError) as e:
-        raise ExtractError(f'网络中断了：{getattr(e, "reason", e)}。请再试一次。') from e
+        raise ExtractError(tr('网络中断了，请再试一次。', 'The connection dropped. Please try again.'), net.raw(e)) from e
 
 
 # ---------------------------------------------------------------- url parsing
@@ -141,7 +148,7 @@ def _x_video(media, source, author):
 def parse_x(data):
     """Turn a syndication tweet-result JSON into our result shape."""
     if not data or data.get('__typename') == 'TweetTombstone':
-        raise ExtractError('这条推文看不到（已删除、受保护，或需要登录才能看）')
+        raise ExtractError(tr('这条推文看不到（已删除、受保护，或需要登录才能看）', 'This post cannot be seen (deleted, protected, or login required).'))
     author = (data.get('user') or {}).get('screen_name') or ''
     videos, seen, photos = [], set(), 0
 
@@ -183,7 +190,7 @@ def extract_x(status_id, opener):
     try:
         data = json.loads(body or b'{}')
     except ValueError as e:
-        raise ExtractError('X 返回的数据看不懂，稍后再试') from e
+        raise ExtractError(tr('X 返回的数据看不懂，稍后再试', 'X sent data ClipSaver cannot read. Try again later.')) from e
     result = parse_x(data)
     result['id'] = result['id'] or status_id
     return result
@@ -258,7 +265,7 @@ def extract_threads(code, opener):
                     headers={"User-Agent": "ClipSaver/1.0"})
     page = body.decode('utf-8', 'replace')
     if 'HeaderLink' not in page and '<video' not in page:
-        raise ExtractError('这条 Threads 帖子看不到（可能已删除或不公开）')
+        raise ExtractError(tr('这条 Threads 帖子看不到（可能已删除或不公开）', 'This Threads post cannot be seen (deleted or not public).'))
     result = parse_threads_embed(page, code)
     if not result['videos'] and browser_reader:
         result['videos'] = videos_from_browser(code, result['author'])
@@ -270,17 +277,18 @@ def resolve_share(url, opener):
     final, _ = fetch(opener, url, headers={"User-Agent": "ClipSaver/1.0"})
     m = THREADS_RE.search(final)
     if not m:
-        raise ExtractError('这个分享链接没有跳转到具体帖子')
+        raise ExtractError(tr('这个分享链接没有跳转到具体帖子', 'This share link does not lead to a post.'))
     return m.group(1)
 
 
 # ---------------------------------------------------------------- entry
 
-def inspect(url, enabled=True, manual=()):
-    opener = Net(enabled, manual)
+def inspect(url, enabled=False, proxies=()):
+    opener = Net(enabled, proxies)
     kind = detect(url)
     if not kind:
-        raise ExtractError('认不出这个链接。请粘贴 X（x.com / twitter.com）或 Threads 的帖子链接。')
+        raise ExtractError(tr('认不出这个链接。请粘贴 X（x.com / twitter.com）或 Threads 的帖子链接。',
+                              'That link is not recognised. Paste an X (x.com / twitter.com) or Threads post link.'))
     site, value = kind
     if site == 'x':
         result = extract_x(value, opener)
@@ -288,10 +296,14 @@ def inspect(url, enabled=True, manual=()):
         code = resolve_share(value, opener) if site == 'threads-share' else value
         result = extract_threads(code, opener)
     if not result['videos']:
-        extra = f'（有 {result["photos"]} 张图片）' if result['photos'] else ''
+        extra = tr(f'（有 {result["photos"]} 张图片）', f' ({result["photos"]} photos)') if result['photos'] else ''
         if site != 'x' and not browser_reader:
-            raise ExtractError('快速方式没找到视频。有些 Threads 视频（比如从 Instagram 分享过来的）'
-                               '要用 ClipSaver 的窗口版才能读取，请从「应用程序」里打开 ClipSaver 再试。')
-        raise ExtractError(f'这条帖子里没有能下载的视频{extra}。直播、外链视频（比如 YouTube）下载不了。')
+            raise ExtractError(tr('快速方式没找到视频。有些 Threads 视频（比如从 Instagram 分享过来的）'
+                                  '要用 ClipSaver 的窗口版才能读取，请从「应用程序」里打开 ClipSaver 再试。',
+                                  'No video found the quick way. Some Threads videos (e.g. shared from Instagram) '
+                                  'can only be read by the ClipSaver app window — open ClipSaver from Applications and try again.'))
+        raise ExtractError(tr(f'这条帖子里没有能下载的视频{extra}。直播、外链视频（比如 YouTube）下载不了。',
+                              f'This post has no downloadable video{extra}. Live streams and links to other sites '
+                              '(e.g. YouTube) cannot be downloaded.'))
     result['route'] = opener.used
     return result

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-lang="zh">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -166,32 +166,44 @@
     .hero h1 { font-size: 1.7rem; }
     .hero { padding-top: 44px; }
   }
+  /* language: both texts are in the page, one is hidden */
+  html[data-lang="zh"] .en, html[data-lang="en"] .zh { display: none !important; }
+  .lang-toggle { position: fixed; top: 14px; right: 14px; z-index: 5; display: inline-flex; padding: 3px; border-radius: 999px;
+    background: var(--card); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+  .lang-toggle button { font: inherit; font-size: .85rem; font-weight: 600; border: 0; background: none; color: var(--muted); padding: 4px 14px; border-radius: 999px; cursor: pointer; }
+  .lang-toggle button[aria-pressed="true"] { background: var(--blue); color: #fff; }
+  .lang-toggle button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 </style>
 </head>
 <body>
 
+<div class="lang-toggle" role="group" aria-label="Language 语言">
+  <button type="button" data-setlang="zh">中文</button>
+  <button type="button" data-setlang="en">EN</button>
+</div>
+
 <header class="hero">
-  <img class="icon" src="assets/icon.png" alt="ClipSaver 图标">
+  <img class="icon" src="assets/icon.png" alt="ClipSaver">
   <h1>ClipSaver</h1>
-  <p class="tag">贴个链接，把 X 和 Threads 的视频存下来。</p>
-  <p class="sub">一条帖子里有好几个视频、视频其实在被引用的帖子里，它都能分清楚。</p>
+  <p class="tag"><span class="zh">贴个链接，把 X 和 Threads 的视频存下来。</span><span class="en">Paste a link, save the videos from X and Threads.</span></p>
+  <p class="sub"><span class="zh">一条帖子里有好几个视频、视频其实在被引用的帖子里，它都能分清楚。</span><span class="en">Several videos in one post, or the video is really in a quoted post — it sorts that out for you.</span></p>
   <div class="badges">
     <img src="https://img.shields.io/badge/macOS-Apple_Silicon-black?logo=apple" alt="macOS Apple Silicon">
     <img src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4" alt="Windows 10 / 11">
-    <img src="https://img.shields.io/github/v/release/skot-chen/clip-saver?label=%E7%89%88%E6%9C%AC" alt="最新版本">
-    <img src="https://img.shields.io/badge/%E6%95%B0%E6%8D%AE-%E4%B8%8D%E4%B8%8A%E4%BC%A0-ff7a45" alt="不上传任何数据">
+    <img src="https://img.shields.io/github/v/release/skot-chen/clip-saver?label=version" alt="version">
+    <img src="https://img.shields.io/badge/%E4%B8%AD%E6%96%87%20%2F%20EN-ff7a45" alt="中文 / EN">
   </div>
   <div class="dl">
     <a class="btn" id="dl-mac" href="https://github.com/skot-chen/clip-saver/releases/latest/download/ClipSaver-macOS-arm64.dmg">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
-      Mac 版 dmg
+      <span class="zh">Mac 版 dmg</span><span class="en">Mac (dmg)</span>
     </a>
     <a class="btn" id="dl-win" href="https://github.com/skot-chen/clip-saver/releases/latest/download/ClipSaver-Windows.exe">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
-      Windows 版 exe
+      <span class="zh">Windows 版 exe</span><span class="en">Windows (exe)</span>
     </a>
   </div>
-  <p class="note">Mac：Apple 芯片（M1–M4）· 约 10 MB　|　Windows：10 / 11，64 位 · 约 10 MB<br>都不用安装别的东西 · <a href="https://github.com/skot-chen/clip-saver">GitHub 仓库</a></p>
+  <p class="note"><span class="zh">Mac：Apple 芯片（M1–M4）· 约 12 MB　|　Windows：10 / 11，64 位 · 约 12 MB<br>都不用安装别的东西 · </span><span class="en">Mac: Apple silicon (M1–M4) · about 12 MB　|　Windows 10 / 11, 64-bit · about 12 MB<br>Nothing else to install · </span><a href="https://github.com/skot-chen/clip-saver"><span class="zh">GitHub 仓库</span><span class="en">GitHub</span></a></p>
 </header>
 
 <div class="wrap">
@@ -199,100 +211,114 @@
   <div class="shots">
     <figure class="shot">
       <div class="frame"><div class="bar"><i></i><i></i><i></i></div>
-        <button class="zoom" type="button" aria-label="放大查看截图"><img src="assets/shot-mixed.jpg" alt="一条 X 帖子：本帖视频默认勾选，引用帖里的视频单独标出" width="786" height="514"></button></div>
-      <figcaption><b>分清视频从哪来</b>本帖自己的视频默认选中，引用帖里的单独标出来</figcaption>
+        <button class="zoom" type="button" aria-label="Zoom 放大">
+          <img class="zh" src="assets/shot-mixed.jpg" alt="一条 X 帖子：本帖视频默认选中，引用帖里的视频单独标出" width="786" height="514">
+          <img class="en" src="assets/shot-mixed-en.jpg" alt="An X post: the post's own video is selected, the quoted post's video is labelled" width="786" height="514">
+        </button></div>
+      <figcaption><span class="zh"><b>分清视频从哪来</b>本帖自己的视频默认选中，引用帖里的单独标出来</span><span class="en"><b>Knows where each video comes from</b>The post's own video is selected; the quoted one is labelled</span></figcaption>
     </figure>
     <figure class="shot">
       <div class="frame"><div class="bar"><i></i><i></i><i></i></div>
-        <button class="zoom" type="button" aria-label="放大查看截图"><img src="assets/shot-carousel.jpg" alt="一条 Threads 轮播帖：4 个视频全部下载完成" width="786" height="514"></button></div>
-      <figcaption><b>多个视频一次存</b>Threads 轮播里的 4 段视频，选中后同时下载</figcaption>
+        <button class="zoom" type="button" aria-label="Zoom 放大">
+          <img class="zh" src="assets/shot-carousel.jpg" alt="一条 Threads 轮播帖：4 个视频全部下载完成" width="786" height="514">
+          <img class="en" src="assets/shot-carousel-en.jpg" alt="A Threads carousel: all 4 videos downloaded" width="786" height="514">
+        </button></div>
+      <figcaption><span class="zh"><b>多个视频一次存</b>Threads 轮播里的 4 段视频，选中后同时下载</span><span class="en"><b>Several videos at once</b>All 4 clips of a Threads carousel, downloaded together</span></figcaption>
     </figure>
   </div>
 
   <section class="block">
-    <h2>它能做什么</h2>
+    <h2><span class="zh">它能做什么</span><span class="en">What it does</span></h2>
     <div class="features">
-      <div><b>X 和 Threads 都能用</b><p>x.com、twitter.com、threads.com、threads.net 的帖子链接，分享链接也行。</p></div>
-      <div><b>多个视频，自己挑</b><p>每个视频都有预览、时长和尺寸，想要哪几个就勾哪几个。</p></div>
-      <div><b>默认最高画质</b><p>自动选最清楚的版本，也可以换小一点的。存下来是普通 mp4，有画面也有声音。</p></div>
-      <div><b>联网和浏览器一样</b><p>自动使用 Clash、V2Ray、Shadowsocks 等代理软件，HTTP 和 SOCKS5 都行；不需要代理时直接连接。设置里能看到每条线路能不能用。</p></div>
-      <div><b>不留记录</b><p>没有账号、没有历史记录，不上传任何东西。电脑上只多出你下载的视频。</p></div>
-      <div><b>像普通软件一样</b><p>双击打开自己的窗口，关掉窗口就退出。三种配色（绿 / 紫 / 橙）随时切换。</p></div>
+      <div><b><span class="zh">X 和 Threads 都能用</span><span class="en">X and Threads</span></b><p><span class="zh">x.com、twitter.com、threads.com、threads.net 的帖子链接，分享链接也行。</span><span class="en">Post links from x.com, twitter.com, threads.com and threads.net — share links too.</span></p></div>
+      <div><b><span class="zh">多个视频，自己挑</span><span class="en">Pick the videos you want</span></b><p><span class="zh">每个视频都有预览、时长和尺寸，想要哪几个就选哪几个。</span><span class="en">Each video shows a preview, length and size. Select the ones you want.</span></p></div>
+      <div><b><span class="zh">默认最高画质</span><span class="en">Best quality by default</span></b><p><span class="zh">自动选最清楚的版本，也可以换小一点的。存下来是普通 mp4，有画面也有声音。</span><span class="en">The sharpest version is picked for you; smaller ones are available. Plain mp4 files with sound.</span></p></div>
+      <div><b><span class="zh">代理自己加，连不上自动换</span><span class="en">Your proxies, with automatic fallback</span></b><p><span class="zh">把 Clash、V2Ray、Shadowsocks 的端口加进来（HTTP 和 SOCKS5 都行），每条都能测试能不能用。一条连不上会自动换下一条。</span><span class="en">Add the ports of Clash, V2Ray or Shadowsocks (HTTP or SOCKS5) and test each one. If one fails, the next is tried automatically.</span></p></div>
+      <div><b><span class="zh">中文 / English</span><span class="en">中文 / English</span></b><p><span class="zh">软件左下角一键切换语言，错误提示也会跟着换。</span><span class="en">Switch the language in the bottom-left corner of the app — error messages too.</span></p></div>
+      <div><b><span class="zh">不留记录</span><span class="en">No history kept</span></b><p><span class="zh">没有账号、没有历史记录，不上传任何东西。电脑上只多出你下载的视频。</span><span class="en">No account, no history, nothing uploaded. Only the videos you download are added to your computer.</span></p></div>
     </div>
   </section>
 
   <section class="block">
-    <h2>为什么不会下错视频</h2>
-    <p>很多下载工具只抓页面上的第一个视频，结果下到回复、推荐，或者别人的视频。ClipSaver 只读这条帖子本身的数据，每个视频都标出来源：</p>
+    <h2><span class="zh">为什么不会下错视频</span><span class="en">Why it doesn't grab the wrong video</span></h2>
+    <p><span class="zh">很多下载工具只抓页面上的第一个视频，结果下到回复、推荐，或者别人的视频。ClipSaver 只读这条帖子本身的数据，每个视频都标出来源：</span><span class="en">Many downloaders just take the first video on the page and end up with a reply, a recommendation or someone else's clip. ClipSaver reads only the post itself and labels every video:</span></p>
     <div class="labels">
-      <div><span class="chip main">本帖</span><p>帖子自己发的视频。默认勾选。</p></div>
-      <div><span class="chip quote">引用帖 @某某</span><p>帖子引用了别人的帖子，视频在那条里面。帖子本身没有视频时会自动勾选。</p></div>
-      <div><span class="chip card">卡片 / 广告</span><p>藏在链接卡片里的视频，常见于广告。普通下载工具经常找不到。</p></div>
+      <div><span class="chip main"><span class="zh">本帖</span><span class="en">This post</span></span><p><span class="zh">帖子自己发的视频。默认选中。</span><span class="en">The post's own video. Selected by default.</span></p></div>
+      <div><span class="chip quote"><span class="zh">引用帖 @某某</span><span class="en">Quoted @someone</span></span><p><span class="zh">帖子引用了别人的帖子，视频在那条里面。帖子本身没有视频时会自动选中。</span><span class="en">The post quotes another post and the video is in that one. Selected when the post has no video of its own.</span></p></div>
+      <div><span class="chip card"><span class="zh">卡片 / 广告</span><span class="en">Card / ad</span></span><p><span class="zh">藏在链接卡片里的视频，常见于广告。普通下载工具经常找不到。</span><span class="en">Videos hidden in a link card, common in ads. Many downloaders miss these.</span></p></div>
     </div>
   </section>
 
   <section class="block">
-    <h2>安装</h2>
+    <h2><span class="zh">安装</span><span class="en">Install</span></h2>
     <div class="os-tabs" role="tablist">
       <button type="button" role="tab" id="tab-mac" aria-selected="true" aria-controls="panel-mac">Mac</button>
       <button type="button" role="tab" id="tab-win" aria-selected="false" aria-controls="panel-win">Windows</button>
     </div>
     <ol class="steps" id="panel-mac" role="tabpanel" aria-labelledby="tab-mac">
       <li><div>
-        <h3>下载</h3>
-        <p>点上面的「Mac 版 dmg」，下载 <code>ClipSaver-macOS-arm64.dmg</code>。</p>
+        <h3><span class="zh">下载</span><span class="en">Download</span></h3>
+        <p><span class="zh">点上面的「Mac 版 dmg」，下载 </span><span class="en">Click “Mac (dmg)” above to get </span><code>ClipSaver-macOS-arm64.dmg</code></p>
       </div></li>
       <li><div>
-        <h3>拖进「应用程序」</h3>
-        <p>双击 dmg，把 ClipSaver 拖到旁边的 Applications 文件夹里。</p>
+        <h3><span class="zh">拖进「应用程序」</span><span class="en">Drag it into Applications</span></h3>
+        <p><span class="zh">双击 dmg，把 ClipSaver 拖到旁边的 Applications 文件夹里。</span><span class="en">Open the dmg and drag ClipSaver onto the Applications folder next to it.</span></p>
       </div></li>
       <li><div>
-        <h3>第一次打开</h3>
-        <p>这个软件没有付费给 Apple 签名，所以第一次打开时 Mac 会拦一下。点「完成」，然后打开 <b>系统设置 → 隐私与安全性</b>，往下找到 ClipSaver，点 <b>「仍要打开」</b>。之后就能直接双击打开了。</p>
-        <p>如果提示"已损坏，无法打开"，打开「终端」，运行下面这行再试：</p>
+        <h3><span class="zh">第一次打开</span><span class="en">First launch</span></h3>
+        <p><span class="zh">这个软件没有付费给 Apple 签名，所以第一次打开时 Mac 会拦一下。点「完成」，然后打开 <b>系统设置 → 隐私与安全性</b>，往下找到 ClipSaver，点 <b>「仍要打开」</b>。之后就能直接双击打开了。</span><span class="en">The app is not signed with a paid Apple certificate, so macOS blocks it the first time. Click “Done”, open <b>System Settings → Privacy &amp; Security</b>, scroll to ClipSaver and click <b>“Open Anyway”</b>. After that it opens normally.</span></p>
+        <p><span class="zh">如果提示"已损坏，无法打开"，打开「终端」，运行下面这行再试：</span><span class="en">If it says the app “is damaged”, open Terminal, run this line and try again:</span></p>
         <pre>xattr -cr /Applications/ClipSaver.app</pre>
       </div></li>
     </ol>
     <ol class="steps" id="panel-win" role="tabpanel" aria-labelledby="tab-win" hidden>
       <li><div>
-        <h3>下载</h3>
-        <p>点上面的「Windows 版 exe」，下载 <code>ClipSaver-Windows.exe</code>。如果浏览器提示"不常下载"，点「…」→「保留」。</p>
+        <h3><span class="zh">下载</span><span class="en">Download</span></h3>
+        <p><span class="zh">点上面的「Windows 版 exe」，下载 <code>ClipSaver-Windows.exe</code>。如果浏览器提示"不常下载"，点「…」→「保留」。</span><span class="en">Click “Windows (exe)” above to get <code>ClipSaver-Windows.exe</code>. If the browser says it is “not commonly downloaded”, choose “…” → “Keep”.</span></p>
       </div></li>
       <li><div>
-        <h3>放到顺手的地方</h3>
-        <p>不用安装，这一个文件就是整个程序。可以把它放到桌面，或者任何你找得到的文件夹里。</p>
+        <h3><span class="zh">放到顺手的地方</span><span class="en">Put it somewhere handy</span></h3>
+        <p><span class="zh">不用安装，这一个文件就是整个程序。可以放到桌面，或者任何你找得到的文件夹里。</span><span class="en">No installation — this one file is the whole app. Keep it on the desktop or in any folder.</span></p>
       </div></li>
       <li><div>
-        <h3>第一次打开</h3>
-        <p>这个软件没有付费购买签名证书，所以第一次双击时 Windows 可能会显示"Windows 已保护你的电脑"。点 <b>「更多信息」</b>，再点 <b>「仍要运行」</b>，之后就能直接双击打开了。</p>
+        <h3><span class="zh">第一次打开</span><span class="en">First launch</span></h3>
+        <p><span class="zh">这个软件没有付费购买签名证书，所以第一次双击时 Windows 可能会显示"Windows 已保护你的电脑"。点 <b>「更多信息」</b>，再点 <b>「仍要运行」</b>，之后就能直接双击打开了。</span><span class="en">The app has no paid signing certificate, so Windows may show “Windows protected your PC” the first time. Click <b>“More info”</b>, then <b>“Run anyway”</b>. After that it opens normally.</span></p>
       </div></li>
     </ol>
   </section>
 
   <section class="block">
-    <h2>使用</h2>
+    <h2><span class="zh">使用</span><span class="en">How to use</span></h2>
     <ol class="steps">
-      <li><div><h3>双击 ClipSaver</h3><p>打开 ClipSaver 的窗口。用完直接关掉窗口就行。</p></div></li>
-      <li><div><h3>点「粘贴」</h3><p>先复制帖子链接，再点「粘贴」，它会自动查找，帖子里所有能下载的视频都会列出来。</p></div></li>
-      <li><div><h3>选好视频和清晰度，点「下载」</h3><p>视频保存在「下载」文件夹，文件名像 <code>x_推文编号_1.mp4</code>。点「在文件夹中显示」可以直接找到。</p></div></li>
+      <li><div><h3><span class="zh">在 X 或 Threads 里复制帖子链接</span><span class="en">Copy a post link in X or Threads</span></h3><p><span class="zh">在帖子的「分享」里选「复制链接」。</span><span class="en">Use “Share” → “Copy link” on the post.</span></p></div></li>
+      <li><div><h3><span class="zh">打开 ClipSaver，点「粘贴链接」</span><span class="en">Open ClipSaver, click “Paste link”</span></h3><p><span class="zh">会自动查找，帖子里所有能下载的视频都会列出来。</span><span class="en">It searches straight away and lists every video it can download.</span></p></div></li>
+      <li><div><h3><span class="zh">选好视频和清晰度，点「下载」</span><span class="en">Pick videos and quality, click “Download”</span></h3><p><span class="zh">视频保存在「下载」文件夹。点「在文件夹中显示」可以直接找到。</span><span class="en">Videos go to your Downloads folder. “Show in folder” takes you there.</span></p></div></li>
     </ol>
   </section>
 
   <section class="block">
-    <h2>下载不了？</h2>
+    <h2><span class="zh">需要代理时</span><span class="en">If you need a proxy</span></h2>
+    <ol class="steps">
+      <li><div><h3><span class="zh">找到代理软件的端口</span><span class="en">Find your proxy app's port</span></h3><p><span class="zh">在 Clash、V2Ray、Shadowsocks 等软件的设置里能看到，常见的是 7890、7897、1080。</span><span class="en">It is in the settings of Clash, V2Ray, Shadowsocks and the like — often 7890, 7897 or 1080.</span></p></div></li>
+      <li><div><h3><span class="zh">在「设置 → 网络」里新增代理</span><span class="en">Add it in Settings → Network</span></h3><p><span class="zh">填 <code>127.0.0.1:端口</code>，添加后会马上测试 X 和 Threads 能不能连上。可以加好几个，点一行把它设为优先（✓）。</span><span class="en">Type <code>127.0.0.1:port</code>; it is tested against X and Threads right away. Add several if you like and click one to use it first (✓).</span></p></div></li>
+      <li><div><h3><span class="zh">打开「代理」开关</span><span class="en">Turn Proxy on</span></h3><p><span class="zh">之后会按顺序试：优先的那个 → 其他的 → 直接连接。连不上会自动换下一个。</span><span class="en">It then tries the ✓ proxy, the others, and finally a direct connection — moving on whenever one fails.</span></p></div></li>
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2><span class="zh">下载不了？</span><span class="en">Can't download?</span></h2>
     <div class="faq">
-      <div><b>提示"连不上网站"</b><p>先确认代理软件开着。打开左边「设置 → 网络」，看列表里哪条线路显示「可用」。如果你的代理软件没被自动找到，点「新增代理」，填它的端口（代理软件里能看到，格式像 <code>127.0.0.1:端口号</code>）。</p></div>
-      <div><b>查找要等十几秒</b><p>有些 Threads 视频（比如从 Instagram 分享过来的）要像浏览器一样打开帖子才能读到，会慢一些，是正常的。</p></div>
-      <div><b>提示"没有能下载的视频"</b><p>帖子里只有图片，或者是直播、YouTube 这类外链视频，这些下载不了。</p></div>
-      <div><b>提示"看不到这条帖子"</b><p>帖子被删了、账号上了锁，或者要登录才能看。</p></div>
-      <div><b>提示"视频地址过期了"</b><p>放得太久了。重新点一下「查找」，再下载就行。</p></div>
+      <div><b><span class="zh">提示"连不上"</span><span class="en">“Could not reach …”</span></b><p><span class="zh">到「设置 → 网络」看你的代理测试结果是不是「✓」。都不行的话，代理软件可能是「规则」模式，把 X / Threads 分到了直连，试试切到「全局」模式。</span><span class="en">Check in Settings → Network that your proxy tests show “✓”. If none work, your proxy app may be in “Rule” mode and send X / Threads direct — try “Global” mode.</span></p></div>
+      <div><b><span class="zh">查找要等十几秒</span><span class="en">Finding takes 10+ seconds</span></b><p><span class="zh">有些 Threads 视频（比如从 Instagram 分享过来的）要像浏览器一样打开帖子才能读到，会慢一些，是正常的。</span><span class="en">Some Threads videos (e.g. shared from Instagram) have to be read by opening the post like a browser. That is slower, and normal.</span></p></div>
+      <div><b><span class="zh">提示"没有能下载的视频"</span><span class="en">“No downloadable video”</span></b><p><span class="zh">帖子里只有图片，或者是直播、YouTube 这类外链视频，这些下载不了。</span><span class="en">The post only has photos, or it is a live stream or a link to another site such as YouTube.</span></p></div>
+      <div><b><span class="zh">还是不行</span><span class="en">Still stuck</span></b><p><span class="zh">点错误下面的「复制错误信息」，把内容发给帮你的人，里面有具体原因。</span><span class="en">Click “Copy error details” under the error and send it to whoever helps you — it contains the exact cause.</span></p></div>
     </div>
   </section>
 
 </div>
 
 <footer>
-  个人做的小工具，只用来保存你有权保存的视频。有问题请到 <a href="https://github.com/skot-chen/clip-saver/issues">GitHub 提 Issue</a>
+  <span class="zh">个人做的小工具，只用来保存你有权保存的视频。有问题请到 </span><span class="en">A small personal tool — only save videos you have the right to keep. Questions: </span><a href="https://github.com/skot-chen/clip-saver/issues"><span class="zh">GitHub 提 Issue</span><span class="en">GitHub issues</span></a>
 </footer>
 
 <dialog class="lightbox" id="lightbox" aria-label="截图大图">
@@ -304,6 +330,23 @@
 </dialog>
 
 <script>
+// Language: remembered choice, otherwise the visitor's browser language.
+(() => {
+  let lang = null;
+  try { lang = localStorage.getItem('lang'); } catch (e) {}
+  if (lang !== 'zh' && lang !== 'en') lang = /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
+  const titles = { zh: 'ClipSaver — 贴个链接，把 X 和 Threads 的视频存下来', en: 'ClipSaver — save videos from X and Threads' };
+  function set(l) {
+    document.documentElement.dataset.lang = l;
+    document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+    document.title = titles[l];
+    document.querySelectorAll('[data-setlang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.setlang === l)));
+    try { localStorage.setItem('lang', l); } catch (e) {}
+  }
+  document.querySelectorAll('[data-setlang]').forEach((b) => b.addEventListener('click', () => set(b.dataset.setlang)));
+  set(lang);
+})();
+
 // Put the visitor's own system first: its download button stays filled, the other turns outlined,
 // and the install steps open on the matching tab.
 (() => {
@@ -335,7 +378,8 @@
 
   function show(i) {
     index = (i + shots.length) % shots.length;
-    const img = shots[index].querySelector('img');
+    const lang = document.documentElement.dataset.lang;
+    const img = shots[index].querySelector('img.' + lang) || shots[index].querySelector('img');
     big.src = img.src;
     big.alt = img.alt;
     cap.textContent = shots[index].querySelector('figcaption').innerText.replace(/\n+/g, ' · ');

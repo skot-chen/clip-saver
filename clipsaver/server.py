@@ -3,6 +3,7 @@
 Nothing is saved except the video files themselves. Download jobs live in
 memory and disappear when the app quits.
 """
+import base64
 import json
 import os
 import re
@@ -17,6 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from . import __version__, extract, net
+from .i18n import set_lang, tr
 
 HERE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent.parent))
 UI_FILE = HERE / 'clipsaver' / 'ui.html'
@@ -48,7 +50,8 @@ def unique_path(folder, stem, ext='.mp4'):
     return p
 
 
-def run_download(job_id, url, stem, site, enabled, manual):
+def run_download(job_id, url, stem, site, enabled, proxies, lang):
+    set_lang(lang)
     job = JOBS[job_id]
     referer = 'https://x.com/' if site == 'x' else 'https://www.threads.com/'
     folder = save_dir()
@@ -56,7 +59,7 @@ def run_download(job_id, url, stem, site, enabled, manual):
     part = target.with_suffix('.mp4.part')
     try:
         req = urllib.request.Request(url, headers={'User-Agent': extract.UA, 'Referer': referer})
-        resp, route = net.open_url(req, enabled, manual, timeout=30)
+        resp, route = net.open_url(req, enabled, proxies, timeout=30)
         job['route'] = route.describe()
         with resp as r, open(part, 'wb') as f:
             total = int(r.headers.get('Content-Length') or 0)
@@ -68,9 +71,9 @@ def run_download(job_id, url, stem, site, enabled, manual):
                 f.write(chunk)
                 job['done'] += len(chunk)
         if job['done'] == 0:
-            raise OSError('下载到的文件是空的')
+            raise OSError(tr('下载到的文件是空的', 'the downloaded file is empty'))
         if total and job['done'] < total:
-            raise OSError('下载没有完成（网络中断）')
+            raise OSError(tr('下载没有完成（网络中断）', 'download incomplete (connection dropped)'))
         part.replace(target)
         job.update(state='ok', path=str(target), name=target.name)
     except Exception as e:  # noqa: BLE001 - shown to the user
@@ -78,14 +81,15 @@ def run_download(job_id, url, stem, site, enabled, manual):
             part.unlink()
         except OSError:
             pass
+        detail = getattr(e, 'detail', '') or net.raw(e)
         msg = str(e)
         if 'HTTP Error 403' in msg or 'HTTP Error 410' in msg:
-            msg = '视频地址过期了，请重新点「查找」再下载'
+            msg = tr('视频地址过期了，请重新点「查找视频」再下载', 'The video link expired. Press "Find videos" again, then download.')
         elif isinstance(e, net.NetError):
-            msg = '连不上视频服务器。' + msg
+            msg = tr('连不上视频服务器。', 'Could not reach the video server. ') + msg
         elif 'urlopen error' in msg or 'timed out' in msg:
-            msg = '下载中途网络断了，请再试一次'
-        job.update(state='error', error=msg)
+            msg = tr('下载中途网络断了，请再试一次', 'The connection dropped during the download. Please try again.')
+        job.update(state='error', error=msg, detail=detail)
 
 
 def read_clipboard():
@@ -102,6 +106,23 @@ def read_clipboard():
     except Exception:  # noqa: BLE001
         pass
     return ''
+
+
+def write_clipboard(text):
+    """Put text on the system clipboard (the "Copy error details" button)."""
+    try:
+        if sys.platform == 'darwin':
+            subprocess.run(['pbcopy'], input=text.encode('utf-8'), timeout=5, check=True)
+            return True
+        if sys.platform.startswith('win'):
+            b64 = base64.b64encode(text.encode('utf-8')).decode()
+            subprocess.run(['powershell', '-NoProfile', '-Command',
+                            f"Set-Clipboard -Value ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('{b64}')))"],
+                           timeout=8, check=True, creationflags=0x08000000)
+            return True
+    except Exception:  # noqa: BLE001
+        pass
+    return False
 
 
 def open_folder(path):
@@ -182,40 +203,43 @@ class Handler(BaseHTTPRequestHandler):
         data = self._json()
         if not isinstance(data, dict):
             data = {}
+        lang = 'en' if data.get('lang') == 'en' else 'zh'
+        set_lang(lang)
         cfg = data.get('net') if isinstance(data.get('net'), dict) else {}
-        enabled = cfg.get('on', True) is not False
-        manual = [str(p) for p in (cfg.get('proxies') or []) if isinstance(p, str)][:20]
-        if self.path == '/api/net':
-            self._send(200, net.status(enabled, manual))
-        elif self.path == '/api/check-proxy':
-            p = net.fix_type(net.parse_proxy(data.get('proxy')))
-            if not p:
-                self._send(200, {'ok': False, 'error': '地址格式不对，例如 127.0.0.1:7890 或 socks5://127.0.0.1:7891'})
+        enabled = cfg.get('on') is True                       # default: direct, until the user turns it on
+        proxies = [str(p) for p in (cfg.get('proxies') or []) if isinstance(p, str)][:20]
+        if self.path == '/api/check-proxy':
+            if not net.parse_proxy(data.get('proxy')):
+                self._send(200, {'ok': False, 'proxy': None,
+                                 'error': tr('地址格式不对，例如 127.0.0.1:7890 或 socks5://127.0.0.1:7891',
+                                             'Invalid address, e.g. 127.0.0.1:7890 or socks5://127.0.0.1:7891')})
             else:
-                self._send(200, {'proxy': p, **net.check(net.Route('manual', p))})
+                self._send(200, net.check(data.get('proxy')))
         elif self.path == '/api/inspect':
             try:
-                self._send(200, extract.inspect(data.get('url', ''), enabled, manual))
+                self._send(200, extract.inspect(data.get('url', ''), enabled, proxies))
             except extract.ExtractError as e:
-                self._send(200, {'error': str(e)})
+                self._send(200, {'error': str(e), 'detail': e.detail})
             except Exception as e:  # noqa: BLE001
-                self._send(200, {'error': f'出错了：{e}'})
+                self._send(200, {'error': tr('出错了', 'Something went wrong'), 'detail': net.raw(e)})
         elif self.path == '/api/download':
             url = data.get('url') or ''
             if not re.match(r'^https://[\w.-]+\.(twimg\.com|cdninstagram\.com|fbcdn\.net)/', url):
-                self._send(400, {'error': '不是 X 或 Threads 的视频地址'})
+                self._send(400, {'error': tr('不是 X 或 Threads 的视频地址', 'Not an X or Threads video address')})
                 return
             job_id = uuid.uuid4().hex[:12]
             with JOBS_LOCK:
                 JOBS[job_id] = {'id': job_id, 'state': 'running', 'done': 0, 'total': 0}
             threading.Thread(target=run_download, daemon=True, args=(
-                job_id, url, data.get('name') or 'video', data.get('site') or 'x', enabled, manual)).start()
+                job_id, url, data.get('name') or 'video', data.get('site') or 'x', enabled, proxies, lang)).start()
             self._send(200, {'job': job_id})
         elif self.path == '/api/reveal':
             path = data.get('path') or ''
             if path and Path(path).exists() and Path(path).parent == save_dir():
                 reveal(path)
             self._send(200, {'ok': True})
+        elif self.path == '/api/copy':
+            self._send(200, {'ok': write_clipboard(str(data.get('text') or '')[:20000])})
         elif self.path == '/api/open-folder':
             open_folder(str(save_dir()))
             self._send(200, {'ok': True})
@@ -323,7 +347,7 @@ def run_window(url, httpd):
     except Exception:  # noqa: BLE001
         return False
     try:
-        window = webview.create_window('ClipSaver', url, width=1120, height=780,
+        window = webview.create_window('ClipSaver', url, width=1120, height=780, text_select=True,
                                        min_size=(760, 560), background_color='#0e1014')
         WINDOW.append(window)
         window.events.closed += lambda *a: exit_soon()

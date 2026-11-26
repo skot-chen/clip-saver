@@ -108,8 +108,7 @@ class Handler(socketserver.BaseRequestHandler):
 def reset():
     SEEN.clear()
     BAD[0] = False
-    net._remembered.clear()
-    net._last_good[0] = None
+    net._good.clear()
     for k in ('CLIPSAVER_BLOCK_DIRECT', 'HTTPS_PROXY', 'HTTP_PROXY', 'https_proxy', 'http_proxy', 'ALL_PROXY'):
         os.environ.pop(k, None)
 
@@ -137,132 +136,120 @@ def ports_seen():
 
 
 # ---------------------------------------------------------------- scenarios
-
-def a_open_network_no_proxy_app_goes_direct():
-    # no proxy app running, open network (or a proxy app in TUN mode)
-    for p in (HTTP_PORT, SOCKS_PORT):
-        stop(p)
-    try:
-        r = extract.inspect(X_POST)
-        assert r['route'] == '直接连接', r['route']
-        assert not SEEN, SEEN
-        return r['route']
-    finally:
-        start(HTTP_PORT, 'http')
-        start(SOCKS_PORT, 'socks')
+# Proxy list as the user would add it in Settings (the ✓ one first).
+H = f'127.0.0.1:{HTTP_PORT}'
+S = f'socks5://127.0.0.1:{SOCKS_PORT}'
+DEAD = '127.0.0.1:7897'          # nothing listens here (like a proxy app that is off)
 
 
-def a2_proxy_app_running_is_preferred():
-    # proxy app running but not set as system proxy: use it before direct,
-    # so blocked sites do not first wait for a direct-connection timeout
-    r = extract.inspect(X_POST)
-    assert '127.0.0.1:%d' % HTTP_PORT in r['route'], r['route']
+def a_switch_off_goes_direct():
+    r = extract.inspect(X_POST, False, [H])
+    assert r['route'] == '直接连接', r['route']
+    assert not SEEN, SEEN
     return r['route']
 
 
-def b_blocked_finds_local_http_proxy():
+def b_switch_on_uses_proxy():
     os.environ['CLIPSAVER_BLOCK_DIRECT'] = '1'    # like a network where x.com is unreachable
-    r = extract.inspect(X_POST)
+    r = extract.inspect(X_POST, True, [H])
     assert '127.0.0.1:%d' % HTTP_PORT in r['route'] and 'HTTP' in r['route'], r['route']
-    r2 = extract.inspect(TH_POST)
-    assert '127.0.0.1' in r2['route'], r2['route']
+    r2 = extract.inspect(TH_POST, True, [H])
+    assert '127.0.0.1:%d' % HTTP_PORT in r2['route'], r2['route']
     return f"X: {r['route']} | Threads: {r2['route']}"
 
 
-def c_blocked_only_socks5_running():
-    stop(HTTP_PORT)
-    try:
-        os.environ['CLIPSAVER_BLOCK_DIRECT'] = '1'
-        r = extract.inspect(X_POST)
-        assert '127.0.0.1:%d' % SOCKS_PORT in r['route'] and 'SOCKS5' in r['route'], r['route']
-        assert SOCKS_PORT in ports_seen(), SEEN
-        return r['route']
-    finally:
-        start(HTTP_PORT, 'http')
-
-
-def d_system_proxy_used_first():
-    os.environ['HTTPS_PROXY'] = f'http://127.0.0.1:{HTTP_PORT}'   # read by getproxies(), like the OS setting
-    r = extract.inspect(X_POST)
-    assert r['route'].startswith('系统代理 127.0.0.1:%d' % HTTP_PORT), r['route']
-    return r['route']
-
-
-def e_user_added_proxy():
+def c_first_proxy_dead_next_one_used():
+    # like the skill log: 7897 does not work, the next one in the list does
     os.environ['CLIPSAVER_BLOCK_DIRECT'] = '1'
-    stop(HTTP_PORT)
-    stop(SOCKS_PORT)
-    try:
-        r = extract.inspect(X_POST, True, [f'socks5://127.0.0.1:{MANUAL_PORT}'])
-        assert r['route'].startswith('手动代理 127.0.0.1:%d' % MANUAL_PORT), r['route']
-        return r['route']
-    finally:
-        start(HTTP_PORT, 'http')
-        start(SOCKS_PORT, 'socks')
+    r = extract.inspect(X_POST, True, [DEAD, S])
+    assert '127.0.0.1:%d' % SOCKS_PORT in r['route'] and 'SOCKS5' in r['route'], r['route']
+    assert net._good.get('cdn.syndication.twimg.com') == f'socks5://127.0.0.1:{SOCKS_PORT}', net._good
+    return r['route'] + '  (remembered for next time)'
 
 
-def f_switch_off_blocked_message():
+def d_wrong_type_is_corrected():
+    os.environ['CLIPSAVER_BLOCK_DIRECT'] = '1'
+    r = extract.inspect(X_POST, True, [f'socks5://127.0.0.1:{HTTP_PORT}', f'127.0.0.1:{SOCKS_PORT}'])
+    assert 'HTTP' in r['route'] and str(HTTP_PORT) in r['route'], r['route']
+    return 'typed socks5 on an HTTP port -> ' + r['route']
+
+
+def e_switch_off_blocked_message():
     os.environ['CLIPSAVER_BLOCK_DIRECT'] = '1'
     try:
-        extract.inspect(X_POST, False)
+        extract.inspect(X_POST, False, [H])
     except extract.ExtractError as e:
-        assert '代理」开关' in str(e), str(e)
+        assert '打开「代理」' in str(e), str(e)
         assert not SEEN, 'switch off must not use any proxy'
-        return str(e)
+        assert e.detail, 'raw detail missing'
+        return f'{e}  || detail: {e.detail}'
     raise AssertionError('should fail')
 
 
-def g_system_proxy_upstream_down_falls_back():
-    os.environ['HTTPS_PROXY'] = f'http://127.0.0.1:{HTTP_PORT}'
-    BAD[0] = True                           # all stand-ins answer "can't reach"
-    r = extract.inspect(X_POST)
+def f_proxy_upstream_down_falls_back_to_direct():
+    BAD[0] = True                           # the proxy answers "can't reach the site"
+    r = extract.inspect(X_POST, True, [H])
     assert r['route'] == '直接连接', r['route']
-    return 'system proxy says 502 -> ' + r['route']
+    return 'proxy says 502 -> ' + r['route']
 
 
-def h_download_through_socks5():
-    stop(HTTP_PORT)
-    try:
-        os.environ['CLIPSAVER_BLOCK_DIRECT'] = '1'
-        r = extract.inspect(X_POST)
-        url = r['videos'][-1]['variants'][0]['url']
-        req = urllib.request.Request(url, headers={'User-Agent': extract.UA, 'Referer': 'https://x.com/'})
-        resp, route = net.open_url(req)
-        with resp:
-            data = resp.read()
-        assert data[4:8] == b'ftyp' and len(data) > 50_000, len(data)
-        assert any('video.twimg.com' in t for _, t in SEEN), SEEN
-        return f'{route.describe()} {len(data)} bytes'
-    finally:
-        start(HTTP_PORT, 'http')
+def g_download_through_socks5():
+    os.environ['CLIPSAVER_BLOCK_DIRECT'] = '1'
+    r = extract.inspect(X_POST, True, [S])
+    url = r['videos'][-1]['variants'][0]['url']
+    req = urllib.request.Request(url, headers={'User-Agent': extract.UA, 'Referer': 'https://x.com/'})
+    resp, route = net.open_url(req, True, [S])
+    with resp:
+        data = resp.read()
+    assert data[4:8] == b'ftyp' and len(data) > 50_000, len(data)
+    assert any('video.twimg.com' in t for _, t in SEEN), SEEN
+    return f'{route.describe()} {len(data)} bytes'
 
 
-def i_everything_down_message():
+def h_everything_down_message():
     os.environ['CLIPSAVER_BLOCK_DIRECT'] = '1'
     BAD[0] = True
     try:
-        extract.inspect(X_POST)
+        extract.inspect(X_POST, True, [DEAD, H])
     except extract.ExtractError as e:
-        assert '直接连接' in str(e) and '127.0.0.1:%d' % HTTP_PORT in str(e), str(e)
+        assert '7897' in str(e) and str(HTTP_PORT) in str(e) and '直接连接' in str(e), str(e)
         return str(e)
     raise AssertionError('should fail')
 
 
-def j_settings_list_status():
-    stop(SOCKS_PORT)
-    start(SOCKS_PORT, 'socks')
-    st = net.status(True, ['127.0.0.1:9', f'socks5://127.0.0.1:{SOCKS_PORT}'])
-    rows = {(r['kind'], r['address'], r['type']): r['ok'] for r in st['routes']}
-    assert rows.get(('manual', '127.0.0.1:9', 'HTTP')) is False, rows
-    assert rows.get(('manual', f'127.0.0.1:{SOCKS_PORT}', 'SOCKS5')) is True, rows
-    assert rows.get(('local', f'127.0.0.1:{HTTP_PORT}', 'HTTP')) is True, rows
-    assert rows.get(('direct', '', '')) is True, rows
-    return '; '.join(f"{r['describe']}={'可用 %dms' % r['ms'] if r['ok'] else '无法使用'}" for r in st['routes'])
+def i_settings_check_per_site():
+    ok = net.check(S)
+    assert ok['ok'] and [s['ok'] for s in ok['sites']] == [True, True], ok
+    dead = net.check(DEAD)
+    assert not dead['ok'] and '没有程序' in dead['error'], dead
+    from clipsaver.i18n import set_lang
+    set_lang('en')
+    try:
+        dead_en = net.check(DEAD)
+    finally:
+        set_lang('zh')
+    assert 'nothing is listening' in dead_en['error'], dead_en
+    return (f"{ok['address']} {ok['type']}: " + ', '.join(f"{s['name']} {s['ms']}ms" for s in ok['sites'])
+            + f" | {dead['address']}: {dead['error']} / {dead_en['error']}")
+
+
+def j_english_error_message():
+    from clipsaver.i18n import set_lang
+    os.environ['CLIPSAVER_BLOCK_DIRECT'] = '1'
+    set_lang('en')
+    try:
+        extract.inspect(X_POST, False, [])
+    except extract.ExtractError as e:
+        assert 'turn Proxy on' in str(e), str(e)
+        return str(e)
+    finally:
+        set_lang('zh')
+    raise AssertionError('should fail')
 
 
 if __name__ == '__main__':
     for p in (HTTP_PORT, SOCKS_PORT, MANUAL_PORT):
-        if net.port_open(p):
+        if socket.socket().connect_ex(("127.0.0.1", p)) == 0:
             sys.exit(f'port {p} is already in use; stop that program first')
     start(HTTP_PORT, 'http')
     start(SOCKS_PORT, 'socks')

@@ -24,8 +24,8 @@
   button, input, select { font: inherit; color: inherit; }
   button { cursor: pointer; }
   svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-  .en { color: var(--faint); font-size: .82em; font-weight: 400; }
   [hidden] { display: none !important; }
+  .selectable, .selectable * { -webkit-user-select: text; user-select: text; cursor: text; }
 
   /* ---------- layout: sidebar | main ---------- */
   .app { display: grid; grid-template-columns: 248px 1fr; height: 100vh; }
@@ -38,18 +38,21 @@
     padding: 11px 14px; border-radius: var(--r-md); text-align: left; font-size: 15px; transition: background .15s, color .15s; }
   .nav:hover { background: var(--panel); color: var(--ink); }
   .nav[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-  .nav .en { margin-left: auto; }
-  .nav[aria-current="page"] .en { color: var(--accent); opacity: .7; }
   .spacer { flex: 1; }
-  .status { border: 1px solid var(--line); background: var(--panel); border-radius: var(--r-md); padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .status { border: 1px solid var(--line); background: var(--panel); border-radius: var(--r-md); padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; color: inherit; }
+  .status:hover { border-color: var(--line-2); }
   .status svg { color: var(--accent); margin-top: 1px; }
   .status b { display: block; font-size: 13.5px; color: var(--accent); }
-  .status span { font-size: 12.5px; color: var(--muted); }
-  .side-foot { display: flex; align-items: center; justify-content: space-between; padding: 12px 6px 0; color: var(--faint); font-size: 12.5px; }
+  .status span { display: block; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+  .side-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 12px 6px 0; color: var(--faint); font-size: 12.5px; }
+  .side-foot .quit { white-space: nowrap; }
   .dots { display: flex; gap: 8px; }
   .dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; padding: 0; outline-offset: 2px; }
   .dot[aria-pressed="true"] { border-color: var(--ink); }
   .dot.green { background: #22c55e; } .dot.purple { background: #8b5cf6; } .dot.orange { background: #ff7a45; }
+  .langs { display: inline-flex; border: 1px solid var(--line-2); border-radius: 99px; padding: 2px; }
+  .langs button { border: 0; background: none; color: var(--muted); font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; }
+  .langs button[aria-pressed="true"] { background: var(--accent); color: #fff; }
   .quit { border: 0; background: none; color: var(--faint); padding: 2px 0; font-size: 12.5px; }
   .quit:hover { color: var(--ink); }
 
@@ -65,6 +68,11 @@
   .linkbar > svg { color: var(--accent); }
   .linkbar input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: 16px; padding: 10px 2px; }
   .linkbar input::placeholder { color: var(--faint); }
+  .clear { border: 0; background: none; color: var(--faint); width: 30px; height: 30px; border-radius: 8px; font-size: 18px; line-height: 1; }
+  .clear:hover { color: var(--ink); background: var(--panel-2); }
+  .steps3 { display: flex; gap: 8px 18px; flex-wrap: wrap; list-style: none; padding: 0; margin: 12px 4px 0; color: var(--muted); font-size: 13.5px; counter-reset: s; }
+  .steps3 li { counter-increment: s; display: flex; align-items: center; gap: 8px; }
+  .steps3 li::before { content: counter(s); width: 20px; height: 20px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 700; display: grid; place-items: center; flex: none; }
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: var(--r-md);
     border: 1.5px solid var(--line-2); background: var(--panel-2); padding: 10px 18px; font-weight: 600; white-space: nowrap;
     transition: background .15s, border-color .15s, transform .05s; }
@@ -72,14 +80,19 @@
   .btn:active { transform: translateY(1px); }
   .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .btn.primary:hover { background: var(--accent-hi); border-color: var(--accent-hi); }
+  .btn.small { padding: 6px 12px; font-size: 13px; border-radius: var(--r-sm); }
   .btn:disabled { opacity: .5; cursor: default; }
-  .btn:focus-visible, .nav:focus-visible, .q:focus-visible, .pick:focus-visible, .dot:focus-visible, .theme:focus-visible {
-    outline: 3px solid var(--accent-line); outline-offset: 2px; }
+  .btn:focus-visible, .nav:focus-visible, .q:focus-visible, .pick:focus-visible, .dot:focus-visible, .theme:focus-visible,
+  .langs button:focus-visible, .status:focus-visible, .clear:focus-visible { outline: 3px solid var(--accent-line); outline-offset: 2px; }
 
   .msg { margin-top: 16px; padding: 13px 16px; border-radius: var(--r-md); background: var(--panel); border: 1px solid var(--line); color: var(--muted); display: flex; gap: 10px; align-items: flex-start; }
-  .msg svg { margin-top: 1px; color: var(--accent); }
-  .msg.bad { border-color: rgba(255,107,107,.4); color: #ffb3b3; }
-  .msg.bad svg { color: var(--bad); }
+  .msg > svg { margin-top: 1px; color: var(--accent); }
+  .msg .body { flex: 1; min-width: 0; }
+  .msg.bad { border-color: rgba(255,107,107,.4); color: #ffc2c2; }
+  .msg.bad > svg { color: var(--bad); }
+  .detail { margin-top: 8px; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--muted);
+    background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .errtools { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 
   /* ---------- empty state ---------- */
   .empty { margin-top: 22px; border: 1.5px dashed var(--line-2); border-radius: var(--r-lg); padding: 34px 26px; text-align: center; color: var(--muted); }
@@ -97,11 +110,9 @@
   .post .who b { display: block; }
   .post .who p { margin: 0; color: var(--muted); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .site { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--line-2); color: var(--muted); flex: none; }
-
   .section-head { display: flex; align-items: baseline; justify-content: space-between; margin: 22px 2px 10px; }
   .section-head h2 { font-size: 15px; margin: 0; letter-spacing: .02em; }
   .linkish { border: 0; background: none; color: var(--accent); padding: 0; font-weight: 600; font-size: 13.5px; }
-
   .videos { display: grid; gap: 12px; }
   .video { display: grid; grid-template-columns: 220px 1fr; gap: 18px; background: var(--panel); border: 1.5px solid var(--line);
     border-radius: var(--r-lg); padding: 12px; transition: border-color .15s, opacity .15s; }
@@ -133,7 +144,8 @@
   .q[aria-pressed="true"] b { color: var(--accent); }
   .bar { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
   .bar > i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .2s; }
-  .state { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .state { font-size: 13px; color: var(--muted); }
+  .state .line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .state.ok { color: var(--ok); } .state.bad { color: var(--bad); }
   .state .linkish { font-size: 13px; }
 
@@ -157,25 +169,26 @@
   .theme .pv { height: 54px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); display: flex; align-items: center; gap: 8px; padding: 0 10px; margin-bottom: 10px; }
   .theme .pv i { display: block; height: 22px; border-radius: 7px; }
   .theme b { font-size: 14px; }
-  .field { display: flex; gap: 10px; }
-  .field input { flex: 1; min-width: 0; background: var(--bg); border: 1.5px solid var(--line-2); border-radius: var(--r-md); padding: 10px 14px; outline: 0; }
-  .field input:focus { border-color: var(--accent-line); }
-  .hint { font-size: 12.5px; color: var(--faint); margin-top: 8px; }
-  /* network: proxy switch + list (like an iOS settings group) */
+  /* network: proxy switch + list, like Telegram's proxy settings */
   .group { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; margin-top: 12px; }
-  .row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); min-height: 54px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); min-height: 56px; }
   .row:first-child { border-top: 0; }
   .row .t { flex: 1; min-width: 0; }
   .row .t b { display: block; font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
   .row .t b .port { color: var(--muted); font-weight: 500; }
   .row .t small { display: block; font-size: 12.5px; color: var(--muted); }
   .row .t small.ok { color: var(--ok); } .row .t small.bad { color: var(--bad); }
+  .prow { cursor: pointer; }
+  .prow:hover { background: var(--panel); }
+  .tick { width: 22px; flex: none; color: var(--accent); display: grid; place-items: center; }
+  .tick svg { width: 18px; height: 18px; stroke-width: 2.8; }
   .tag { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--bg); color: var(--muted); border: 1px solid var(--line-2); margin-left: 6px; vertical-align: 1px; }
+  .tag.first { color: var(--accent); border-color: var(--accent-line); }
   .switch { width: 50px; height: 30px; border-radius: 99px; border: 0; background: var(--line-2); position: relative; flex: none; padding: 0; transition: background .15s; }
   .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
   .switch[aria-checked="true"] { background: var(--accent); }
   .switch[aria-checked="true"]::after { transform: translateX(20px); }
-  .switch:focus-visible, .icon-btn:focus-visible, .addbtn:focus-visible { outline: 3px solid var(--accent-line); outline-offset: 2px; }
+  .switch:focus-visible, .icon-btn:focus-visible, .addbtn:focus-visible, .prow:focus-visible { outline: 3px solid var(--accent-line); outline-offset: 2px; }
   .icon-btn { width: 34px; height: 34px; border-radius: 10px; border: 0; background: none; color: var(--muted); display: grid; place-items: center; flex: none; }
   .icon-btn:hover { background: var(--panel); color: var(--bad); }
   .addbtn { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; color: var(--accent); font-weight: 600; padding: 14px; text-align: left; }
@@ -189,15 +202,16 @@
   .labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .labels div { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; font-size: 13.5px; color: var(--muted); }
   .labels .chip { position: static; display: inline-block; margin-bottom: 6px; }
+  .faq b { color: var(--ink); }
 
   /* ---------- narrow windows ---------- */
   @media (max-width: 900px) {
     .app { grid-template-columns: 76px 1fr; }
-    .brand div, .nav span, .nav .en, .status, .side-foot .ver { display: none; }
+    .brand div, .nav span, .status, .side-foot .ver { display: none; }
     .brand { padding: 2px 0 18px; justify-content: center; }
     .nav { justify-content: center; padding: 12px 0; }
     .side-foot { flex-direction: column; gap: 12px; }
-    .dots { flex-direction: column; }
+    .dots, .langs { flex-direction: column; }
     .video { grid-template-columns: 170px 1fr; }
   }
   @media (max-width: 620px) {
@@ -206,10 +220,10 @@
     .brand { padding: 0 6px 0 0; }
     .spacer, .side-foot .ver { display: none; }
     .side-foot { flex-direction: row; padding: 0; margin-left: auto; }
-    .dots { flex-direction: row; }
+    .dots, .langs { flex-direction: row; }
     .view { padding: 20px 16px; }
     .linkbar { flex-wrap: wrap; padding: 8px; }
-    .linkbar input { flex-basis: calc(100% - 40px); }
+    .linkbar input { flex-basis: calc(100% - 80px); }
     .linkbar .btn { flex: 1; }
     .quit { white-space: nowrap; }
     h1 { font-size: 24px; }
@@ -236,141 +250,224 @@
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
 </svg>
 
 <div class="app">
   <aside class="side">
     <div class="brand">
       <img class="logo" src="/logo.png" alt="">
-      <div><b>ClipSaver</b><small>视频下载 · X &amp; Threads</small></div>
+      <div><b>ClipSaver</b><small data-t="brandSub"></small></div>
     </div>
-    <button class="nav" data-view="download" aria-current="page" title="下载 Download"><svg class="i"><use href="#i-dl"/></svg><span>下载</span><span class="en">Download</span></button>
-    <button class="nav" data-view="settings" title="设置 Settings"><svg class="i"><use href="#i-gear"/></svg><span>设置</span><span class="en">Settings</span></button>
-    <button class="nav" data-view="about" title="关于 About"><svg class="i"><use href="#i-info"/></svg><span>关于</span><span class="en">About</span></button>
+    <button class="nav" data-view="download" aria-current="page"><svg class="i"><use href="#i-dl"/></svg><span data-t="navDownload"></span></button>
+    <button class="nav" data-view="settings"><svg class="i"><use href="#i-gear"/></svg><span data-t="navSettings"></span></button>
+    <button class="nav" data-view="about"><svg class="i"><use href="#i-info"/></svg><span data-t="navAbout"></span></button>
     <div class="spacer"></div>
-    <div class="status">
-      <svg class="i"><use href="#i-shield"/></svg>
-      <div><b id="net">自动联网</b><span id="netsub">和浏览器一样，自动找代理</span></div>
-    </div>
+    <button class="status" id="statusbox" type="button">
+      <svg class="i"><use href="#i-globe"/></svg>
+      <div><b id="net"></b><span id="netsub"></span></div>
+    </button>
     <div class="side-foot">
-      <div class="dots" role="group" aria-label="配色 Color">
-        <button class="dot orange" data-theme="orange" aria-label="珊瑚橙" title="珊瑚橙 Coral"></button>
-        <button class="dot green" data-theme="green" aria-label="绿色" title="绿色 Green"></button>
-        <button class="dot purple" data-theme="purple" aria-label="紫色" title="紫色 Purple"></button>
+      <div class="dots" role="group">
+        <button class="dot orange" data-theme="orange" data-tt="coral"></button>
+        <button class="dot green" data-theme="green" data-tt="green"></button>
+        <button class="dot purple" data-theme="purple" data-tt="purple"></button>
+      </div>
+      <div class="langs" role="group" aria-label="Language 语言">
+        <button type="button" data-lang="zh">中</button>
+        <button type="button" data-lang="en">EN</button>
       </div>
       <span class="ver" id="ver"></span>
-      <button class="quit" id="quit" hidden>退出 Quit</button>
+      <button class="quit" id="quit" hidden data-t="quit"></button>
     </div>
   </aside>
 
   <main class="main">
     <!-- download -->
     <section class="view" id="view-download">
-      <h1>下载视频 <span class="en">Download video</span></h1>
-      <p class="lead">粘贴 X 或 Threads 的帖子链接，找出里面所有的视频。</p>
+      <h1 data-t="dlTitle"></h1>
+      <p class="lead" data-t="dlLead"></p>
 
       <form class="linkbar" id="form">
         <svg class="i"><use href="#i-link"/></svg>
-        <input type="text" id="url" placeholder="粘贴帖子链接… Paste a post link" autocomplete="off" spellcheck="false" autofocus>
-        <button class="btn" id="find" type="submit" title="查找视频 Find"><svg class="i"><use href="#i-search"/></svg>查找</button>
-        <button class="btn primary" id="paste" type="button"><svg class="i"><use href="#i-paste"/></svg>粘贴 Paste</button>
+        <input type="text" id="url" data-tp="inputPh" autocomplete="off" spellcheck="false" autofocus>
+        <button class="clear" id="clear" type="button" hidden data-tl="clear">×</button>
+        <button class="btn primary" id="go" type="submit"></button>
       </form>
+      <ol class="steps3">
+        <li data-t="step1"></li>
+        <li data-t="step2"></li>
+        <li data-t="step3"></li>
+      </ol>
 
-      <div id="out">
-        <div class="empty">
-          <div class="big"><svg class="i"><use href="#i-film"/></svg></div>
-          <h2>贴一个链接试试</h2>
-          <div>x.com · twitter.com · threads.com · threads.net，分享链接也可以</div>
-          <div class="legend">
-            <span><span class="chip main">本帖</span> 帖子自己的视频</span>
-            <span><span class="chip quote">引用帖</span> 被引用的帖子里的</span>
-            <span><span class="chip cardsrc">卡片</span> 藏在卡片/广告里的</span>
-          </div>
-        </div>
-      </div>
+      <div id="out"></div>
 
       <div class="dock" id="dock" hidden>
         <div class="dockin">
           <div class="ring"><svg class="i"><use href="#i-dl"/></svg></div>
           <div class="t">
-            <b id="summary">准备下载</b>
-            <button id="folderbtn" type="button" title="打开文件夹 Open folder"></button>
+            <b id="summary"></b>
+            <button id="folderbtn" type="button"></button>
           </div>
-          <button class="btn primary go" id="dl"><svg class="i"><use href="#i-dl"/></svg>下载 Download</button>
+          <button class="btn primary go" id="dl"><svg class="i"><use href="#i-dl"/></svg><span data-t="dlBtn"></span></button>
         </div>
       </div>
     </section>
 
     <!-- settings -->
     <section class="view" id="view-settings" hidden>
-      <h1>设置 <span class="en">Settings</span></h1>
-      <p class="lead">设置只记在这台电脑的这个程序里，不上传。</p>
-      <div class="card">
-        <h2>配色 <span class="en">Color style</span></h2>
-        <p>选一个你喜欢的颜色。</p>
-        <div class="themes">
-          <button class="theme" data-theme="orange"><div class="pv"><i style="width:40%;background:#ff7a45"></i><i style="width:22%;background:#262c36"></i></div><b>珊瑚橙 Coral</b></button>
-          <button class="theme" data-theme="green"><div class="pv"><i style="width:40%;background:#22c55e"></i><i style="width:22%;background:#262c36"></i></div><b>绿色 Green</b></button>
-          <button class="theme" data-theme="purple"><div class="pv"><i style="width:40%;background:#8b5cf6"></i><i style="width:22%;background:#262c36"></i></div><b>紫色 Purple</b></button>
-        </div>
-      </div>
-      <div class="card">
-        <h2>网络 <span class="en">Network</span></h2>
-        <p>和 Chrome 一样：会自动用 Clash、V2Ray、Shadowsocks 这些代理软件；不需要代理的网络会直接连接。一般不用改。</p>
+      <h1 data-t="setTitle"></h1>
+      <p class="lead" data-t="setLead"></p>
 
+      <div class="card">
+        <h2 data-t="netTitle"></h2>
+        <p data-t="netLead"></p>
         <div class="group">
           <div class="row">
-            <div class="t"><b>代理 Proxy</b><small id="switchnote">开着：先走下面能用的代理，都不行再直接连接</small></div>
-            <button class="switch" id="proxyswitch" type="button" role="switch" aria-checked="true" aria-label="使用代理"></button>
-          </div>
-          <div class="row" id="lastrow" hidden>
-            <div class="t"><small>上一次成功走的</small><b id="lastroute"></b></div>
+            <div class="t"><b data-t="proxyLabel"></b><small id="switchnote"></small></div>
+            <button class="switch" id="proxyswitch" type="button" role="switch" aria-checked="false"></button>
           </div>
         </div>
-
         <div class="group" id="plist">
-          <button class="addbtn" id="addbtn" type="button"><svg class="i"><use href="#i-plus"/></svg>新增代理 Add proxy</button>
+          <button class="addbtn" id="addbtn" type="button"><svg class="i"><use href="#i-plus"/></svg><span data-t="addProxy"></span></button>
           <div class="addrow" id="addrow" hidden>
-            <input type="text" id="newproxy" placeholder="127.0.0.1:7890 或 socks5://127.0.0.1:7891" autocomplete="off" spellcheck="false">
-            <button class="btn primary" id="addok" type="button">添加</button>
-            <button class="btn" id="addcancel" type="button">取消</button>
+            <input type="text" id="newproxy" data-tp="addPh" autocomplete="off" spellcheck="false">
+            <button class="btn primary small" id="addok" type="button" data-t="add"></button>
+            <button class="btn small" id="addcancel" type="button" data-t="cancel"></button>
             <div class="adderr" id="adderr"></div>
           </div>
           <div id="rows"></div>
         </div>
-        <div class="muted-box">「系统」= 代理软件打开了"系统代理"；「本机」= 在这台电脑上找到的代理软件端口；「手动」= 你自己加的。HTTP 和 SOCKS5 都可以。设置只记在这台电脑上。</div>
-        <button class="btn" id="redetect" type="button" style="margin-top:12px"><svg class="i"><use href="#i-search"/></svg>重新检测 Check again</button>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
+          <button class="btn small" id="testall" type="button"><svg class="i"><use href="#i-search"/></svg><span data-t="testAll"></span></button>
+          <span class="muted-box" style="margin:0" data-t="netFoot"></span>
+        </div>
       </div>
+
       <div class="card">
-        <h2>保存位置 <span class="en">Save to</span></h2>
-        <p id="folder2">—</p>
-        <button class="btn" id="openfolder" type="button"><svg class="i"><use href="#i-folder"/></svg>打开文件夹 Open</button>
+        <h2 data-t="colorTitle"></h2>
+        <div class="themes">
+          <button class="theme" data-theme="orange"><div class="pv"><i style="width:40%;background:#ff7a45"></i><i style="width:22%;background:#262c36"></i></div><b data-t="coral"></b></button>
+          <button class="theme" data-theme="green"><div class="pv"><i style="width:40%;background:#22c55e"></i><i style="width:22%;background:#262c36"></i></div><b data-t="green"></b></button>
+          <button class="theme" data-theme="purple"><div class="pv"><i style="width:40%;background:#8b5cf6"></i><i style="width:22%;background:#262c36"></i></div><b data-t="purple"></b></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 data-t="folderTitle"></h2>
+        <p id="folder2" class="selectable">—</p>
+        <button class="btn" id="openfolder" type="button"><svg class="i"><use href="#i-folder"/></svg><span data-t="openFolder"></span></button>
       </div>
     </section>
 
     <!-- about -->
     <section class="view" id="view-about" hidden>
-      <h1>关于 <span class="en">About</span></h1>
-      <p class="lead">ClipSaver 只读帖子本身的数据，不会下到回复或推荐里的视频。</p>
+      <h1 data-t="navAbout"></h1>
+      <p class="lead" data-t="aboutLead"></p>
       <div class="card">
-        <h2>视频上的标签</h2>
-        <p>每个视频都会标出它从哪来：</p>
+        <h2 data-t="labelsTitle"></h2>
         <div class="labels">
-          <div><span class="chip main">本帖</span><br>帖子自己发的视频。默认勾选。</div>
-          <div><span class="chip quote">引用帖 @某某</span><br>帖子引用了别人的帖子，视频在那条里。</div>
-          <div><span class="chip cardsrc">卡片</span><br>藏在链接卡片里，常见于广告。</div>
+          <div><span class="chip main" data-t="chipMain"></span><br><span data-t="labMain"></span></div>
+          <div><span class="chip quote" data-t="legQuote"></span><br><span data-t="labQuote"></span></div>
+          <div><span class="chip cardsrc" data-t="chipCard"></span><br><span data-t="labCard"></span></div>
         </div>
       </div>
-      <div class="card">
-        <h2>下载不了？</h2>
-        <p><b>连不上网站</b>：确认代理软件开着，在「设置 → 网络」里看哪条线路可用，没找到就「新增代理」。<br><b>没有能下载的视频</b>：帖子只有图片，或是直播、YouTube 外链。<br><b>看不到这条帖子</b>：已删除、账号上锁，或要登录才能看。<br><b>视频地址过期了</b>：重新点「查找」再下载。</p>
-        <p class="hint" id="ver2"></p>
+      <div class="card faq">
+        <h2 data-t="troubleTitle"></h2>
+        <p data-th="trouble"></p>
+        <p class="muted-box selectable" id="ver2"></p>
       </div>
     </section>
   </main>
 </div>
 
 <script>
+/* ======================= words (中文 / English) ======================= */
+const T = {
+  zh: {
+    brandSub: '视频下载 · X & Threads', navDownload: '下载', navSettings: '设置', navAbout: '关于', quit: '退出',
+    coral: '珊瑚橙', green: '绿色', purple: '紫色', clear: '清空',
+    netDirect: '直接连接', netDirectSub: '代理没开（设置 → 网络）', netProxy: '使用代理',
+    netProxySub: (n) => `${n} 个代理，连不上会自动换`, netProxyNone: '代理开着，但还没添加代理',
+    routeUsed: (r) => '这次走的：' + r,
+    dlTitle: '下载视频', dlLead: '找出 X 或 Threads 帖子里所有的视频，选好再下载。',
+    inputPh: '把帖子链接粘贴到这里', btnPaste: '粘贴链接', btnFind: '查找视频',
+    step1: '在 X 或 Threads 里复制帖子链接', step2: '点「粘贴链接」，会自动查找', step3: '选好视频，点「下载」',
+    emptyTitle: '还没有链接', emptySites: 'x.com · twitter.com · threads.com · threads.net，分享链接也可以',
+    legMain: '本帖', legMainD: '帖子自己的视频', legQuote: '引用帖', legQuoteD: '被引用的帖子里的', legCard: '卡片', legCardD: '藏在卡片 / 广告里的',
+    looking: '正在查找…',
+    slow: '还在找… 有些视频（比如从 Instagram 分享到 Threads 的）要像浏览器一样打开帖子才能读到，需要多等 10 秒左右。',
+    clipEmpty: '剪贴板里没有链接。先在 X 或 Threads 里复制帖子链接，再点「粘贴链接」。',
+    noResponse: '程序没响应，请重新打开 ClipSaver。',
+    copyErr: '复制错误信息', copied: '已复制 ✓', techInfo: '技术信息（发给别人帮你看时用）', openNet: '打开网络设置',
+    noteMixed: '这条帖子里的视频来自不同地方，已分开标出。默认只选了本帖自己的视频。',
+    noteQuote: '这条帖子本身没有视频，下面是它引用的那条帖子里的视频。',
+    noteCard: '视频在帖子附带的卡片（常见于广告）里。',
+    found: (n) => `找到 ${n} 个视频`, selectAll: '全选', nth: (i) => `第 ${i} 个`, pick: '选中', best: '最高', original: '原画',
+    chipMain: '本帖', chipQuote: (a) => `引用帖 @${a}`, chipCard: '卡片',
+    ready: (n) => `准备下载 ${n} 个视频`, nothing: '还没选视频', downloading: (n) => `正在下载 ${n} 个视频…`,
+    doneAll: (n) => `✓ ${n} 个视频已保存`, partial: (a, b) => `${a} 个成功，${b} 个失败`, saveTo: '保存到：', dlBtn: '下载',
+    starting: '开始下载…', dling: '下载中', saved: '已保存', show: '在文件夹中显示', cantStart: '没能开始下载',
+    setTitle: '设置', setLead: '设置只记在这台电脑上，不上传。',
+    netTitle: '网络',
+    netLead: '能直接打开 X 和 Threads 的网络，不用管这里。需要代理时：把代理软件（Clash、V2Ray、Shadowsocks 等）的端口加进来，再打开「代理」。可以加好几个：打 ✓ 的先用，连不上会自动换下一个，最后再试直接连接。',
+    proxyLabel: '代理', switchOn: '开：按列表顺序试，最后试直接连接', switchOff: '关：只直接连接，不用代理',
+    addProxy: '新增代理', addPh: '例如 127.0.0.1:7890 或 socks5://127.0.0.1:7891', add: '添加', cancel: '取消',
+    addEmpty: '先填代理地址，例如 127.0.0.1:7890',
+    emptyList: '还没有代理。打开你的代理软件，找到它的端口（Clash 常见的是 7890 或 7897），点上面的「新增代理」加进来。',
+    testAll: '重新测试', netFoot: '点一行可以把它设为优先（✓）。测试会分别试 X 和 Threads。',
+    testing: '测试中…', notTested: '还没测试', unusable: '无法使用', firstTag: '优先', del: '删除',
+    colorTitle: '配色', folderTitle: '保存位置', openFolder: '打开文件夹',
+    aboutLead: 'ClipSaver 只读帖子本身的数据，不会下到回复或推荐里的视频。',
+    labelsTitle: '视频上的标签', labMain: '帖子自己发的视频。默认选中。', labQuote: '帖子引用了别人的帖子，视频在那条里。', labCard: '藏在链接卡片里，常见于广告。',
+    troubleTitle: '下载不了？',
+    trouble: '<b>连不上网站</b>：到「设置 → 网络」加上你的代理软件端口，打开「代理」，看测试结果哪个「可用」。<br><b>没有能下载的视频</b>：帖子只有图片，或是直播、YouTube 外链。<br><b>看不到这条帖子</b>：已删除、账号上锁，或要登录才能看。<br><b>视频地址过期了</b>：重新点「查找视频」再下载。<br><b>还是不行</b>：点错误下面的「复制错误信息」，发给帮你的人看。',
+  },
+  en: {
+    brandSub: 'Video downloader · X & Threads', navDownload: 'Download', navSettings: 'Settings', navAbout: 'About', quit: 'Quit',
+    coral: 'Coral', green: 'Green', purple: 'Purple', clear: 'Clear',
+    netDirect: 'Direct connection', netDirectSub: 'Proxy is off (Settings → Network)', netProxy: 'Using proxy',
+    netProxySub: (n) => `${n} prox${n === 1 ? 'y' : 'ies'}, switches if one fails`, netProxyNone: 'Proxy is on, but none added',
+    routeUsed: (r) => 'Route used: ' + r,
+    dlTitle: 'Download video', dlLead: 'Finds every video in an X or Threads post. Pick the ones you want, then download.',
+    inputPh: 'Paste a post link here', btnPaste: 'Paste link', btnFind: 'Find videos',
+    step1: 'Copy a post link in X or Threads', step2: 'Click “Paste link” — it searches right away', step3: 'Pick videos, click “Download”',
+    emptyTitle: 'No link yet', emptySites: 'x.com · twitter.com · threads.com · threads.net — share links work too',
+    legMain: 'This post', legMainD: 'the post’s own video', legQuote: 'Quoted', legQuoteD: 'inside the quoted post', legCard: 'Card', legCardD: 'hidden in a card or ad',
+    looking: 'Looking…',
+    slow: 'Still looking… Some videos (e.g. shared from Instagram to Threads) can only be read by opening the post like a browser does — about 10 more seconds.',
+    clipEmpty: 'There is no link on the clipboard. Copy a post link in X or Threads first, then click “Paste link”.',
+    noResponse: 'ClipSaver is not responding. Please reopen it.',
+    copyErr: 'Copy error details', copied: 'Copied ✓', techInfo: 'Technical details (for whoever helps you)', openNet: 'Open network settings',
+    noteMixed: 'The videos in this post come from different places and are labelled. Only the post’s own videos are selected.',
+    noteQuote: 'This post has no video of its own — these are from the post it quotes.',
+    noteCard: 'The video is in a card attached to the post (often an ad).',
+    found: (n) => `${n} video${n === 1 ? '' : 's'} found`, selectAll: 'Select all', nth: (i) => `Video ${i}`, pick: 'Selected', best: 'Best', original: 'Original',
+    chipMain: 'This post', chipQuote: (a) => `Quoted @${a}`, chipCard: 'Card',
+    ready: (n) => `Ready to download ${n}`, nothing: 'Nothing selected', downloading: (n) => `Downloading ${n}…`,
+    doneAll: (n) => `✓ ${n} saved`, partial: (a, b) => `${a} saved, ${b} failed`, saveTo: 'Save to: ', dlBtn: 'Download',
+    starting: 'Starting…', dling: 'Downloading', saved: 'Saved', show: 'Show in folder', cantStart: 'Could not start',
+    setTitle: 'Settings', setLead: 'Settings stay on this computer.',
+    netTitle: 'Network',
+    netLead: 'If X and Threads open on your network without a proxy, leave this alone. If you need a proxy: add the port of your proxy app (Clash, V2Ray, Shadowsocks…) and turn Proxy on. You can add several — the ✓ one is used first, the next one is tried if it fails, and a direct connection is tried last.',
+    proxyLabel: 'Proxy', switchOn: 'On: tries the list in order, then a direct connection', switchOff: 'Off: direct connection only',
+    addProxy: 'Add proxy', addPh: 'e.g. 127.0.0.1:7890 or socks5://127.0.0.1:7891', add: 'Add', cancel: 'Cancel',
+    addEmpty: 'Type the proxy address first, e.g. 127.0.0.1:7890',
+    emptyList: 'No proxies yet. Open your proxy app, find its port (Clash often uses 7890 or 7897) and click “Add proxy”.',
+    testAll: 'Test again', netFoot: 'Click a row to use it first (✓). Tests try X and Threads separately.',
+    testing: 'Testing…', notTested: 'Not tested yet', unusable: 'Not working', firstTag: 'First', del: 'Delete',
+    colorTitle: 'Color', folderTitle: 'Save to', openFolder: 'Open folder',
+    aboutLead: 'ClipSaver reads only the post itself, so it never grabs videos from replies or recommendations.',
+    labelsTitle: 'Labels on videos', labMain: 'The post’s own video. Selected by default.', labQuote: 'The post quotes another post; the video is in that one.', labCard: 'Hidden in a link card, often an ad.',
+    troubleTitle: 'Can’t download?',
+    trouble: '<b>Cannot reach the site</b>: in Settings → Network add your proxy app’s port, turn Proxy on, and check which one says “Works”.<br><b>No downloadable video</b>: the post only has photos, or it is a live stream / YouTube link.<br><b>Post cannot be seen</b>: deleted, protected, or login required.<br><b>Video link expired</b>: click “Find videos” again, then download.<br><b>Still stuck</b>: click “Copy error details” under the error and send it to whoever helps you.',
+  },
+};
+let LANG = 'zh';
+const t = (k, ...a) => { const v = (T[LANG][k] ?? T.zh[k]); return typeof v === 'function' ? v(...a) : v; };
+
+/* ======================= helpers ======================= */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const out = $('#out');
@@ -382,183 +479,234 @@ function fmtDur(s) { if (!s) return ''; s = Math.round(s); return Math.floor(s /
 function fmtSize(b) { return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
 
 async function api(path, body) {
-  const r = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
+  const opts = body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: LANG, ...body }) } : {};
+  const r = await fetch(path, opts);
   return r.json();
 }
+let INFO = { version: '', platform: '' };
+async function copyText(text) {
+  try { const r = await api('/api/copy', { text }); if (r.ok) return true; } catch (e) {}
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) { return false; }
+}
 
-/* ---------- theme ---------- */
-function setTheme(t, remember) {
-  if (!['green', 'purple', 'orange'].includes(t)) t = 'orange';
-  document.documentElement.dataset.theme = t;
-  $$('[data-theme]').forEach((b) => { if (b !== document.documentElement) b.setAttribute('aria-pressed', String(b.dataset.theme === t)); });
-  if (remember) store('accent', t);   // only an explicit choice is remembered (new key: older versions auto-saved green)
+/* ======================= language ======================= */
+function applyLang() {
+  document.documentElement.lang = LANG === 'en' ? 'en' : 'zh-CN';
+  $$('[data-t]').forEach((el) => { el.textContent = t(el.dataset.t); });
+  $$('[data-th]').forEach((el) => { el.innerHTML = t(el.dataset.th); });
+  $$('[data-tp]').forEach((el) => { el.placeholder = t(el.dataset.tp); });
+  $$('[data-tt]').forEach((el) => { el.title = t(el.dataset.tt); el.setAttribute('aria-label', t(el.dataset.tt)); });
+  $$('[data-tl]').forEach((el) => { el.title = t(el.dataset.tl); el.setAttribute('aria-label', t(el.dataset.tl)); });
+  $$('.langs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === LANG)));
+  $('#proxyswitch').setAttribute('aria-label', t('proxyLabel'));
+  updateGo(); renderSwitch(); renderRows(); updateSummary();
+  if (current) render(current); else if (!out.querySelector('.msg')) showEmpty();
+}
+$$('.langs button').forEach((b) => b.addEventListener('click', () => { LANG = b.dataset.lang; store('lang', LANG); applyLang(); }));
+
+/* ======================= theme ======================= */
+function setTheme(th, remember) {
+  if (!['green', 'purple', 'orange'].includes(th)) th = 'orange';
+  document.documentElement.dataset.theme = th;
+  $$('.dot, .theme').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.theme === th)));
+  if (remember) store('accent', th);
 }
 $$('.dot, .theme').forEach((b) => b.addEventListener('click', () => setTheme(b.dataset.theme, true)));
-setTheme(load('accent') || 'orange');
 
-/* ---------- views ---------- */
+/* ======================= views ======================= */
 function show(view) {
-  $$('.nav').forEach((n) => {
-    if (n.dataset.view === view) n.setAttribute('aria-current', 'page');
-    else n.removeAttribute('aria-current');
-  });
+  $$('.nav').forEach((n) => { if (n.dataset.view === view) n.setAttribute('aria-current', 'page'); else n.removeAttribute('aria-current'); });
   ['download', 'settings', 'about'].forEach((v) => { $('#view-' + v).hidden = v !== view; });
   $('.main').scrollTop = 0;
 }
 $$('.nav').forEach((n) => n.addEventListener('click', () => show(n.dataset.view)));
+$('#statusbox').onclick = () => show('settings');
 
-/* ---------- network: proxy switch + list ---------- */
-let proxyOn = load('proxyOn') !== 'off';            // on unless the user turned it off
+/* ======================= network: proxy switch + my list ======================= */
+let proxyOn = load('proxyOn2') === 'on';     // off until the user turns it on
 let myProxies = [];
 try { myProxies = JSON.parse(load('proxies') || '[]').filter((p) => typeof p === 'string'); } catch (e) { myProxies = []; }
-if (!myProxies.length && load('proxy')) { myProxies = [load('proxy')]; store('proxies', JSON.stringify(myProxies)); }   // from v0.5 and older
-store('proxy', null);
+const checks = {};                            // address -> last test result (memory only)
+let lastRoute = '';
 function netPayload() { return { net: { on: proxyOn, proxies: myProxies } }; }
 function saveProxies() { store('proxies', myProxies.length ? JSON.stringify(myProxies) : null); }
+const addrOf = (p) => p.replace(/^[a-z0-9]+:\/\//i, '').toLowerCase();
 
 function renderSwitch() {
   $('#proxyswitch').setAttribute('aria-checked', String(proxyOn));
-  $('#switchnote').textContent = proxyOn ? '开着：先走下面能用的代理，都不行再直接连接' : '关着：只直接连接，不用任何代理';
-  $('#plist').style.opacity = proxyOn ? '1' : '.5';
-  $('#net').textContent = proxyOn ? '自动联网' : '直接连接';
-  $('#netsub').textContent = proxyOn ? '和浏览器一样，自动用代理' : '代理已关闭';
+  $('#switchnote').textContent = proxyOn ? t('switchOn') : t('switchOff');
+  $('#net').textContent = proxyOn ? t('netProxy') : t('netDirect');
+  $('#netsub').textContent = lastRoute ? t('routeUsed', lastRoute)
+    : !proxyOn ? t('netDirectSub') : myProxies.length ? t('netProxySub', myProxies.length) : t('netProxyNone');
 }
-$('#proxyswitch').onclick = () => { proxyOn = !proxyOn; store('proxyOn', proxyOn ? null : 'off'); renderSwitch(); checkNet(); };
-renderSwitch();
-function showRoute(route) { if (route) $('#netsub').textContent = '这次走的：' + route.replace(/（.*$/, ''); }
+$('#proxyswitch').onclick = () => { proxyOn = !proxyOn; store('proxyOn2', proxyOn ? 'on' : null); lastRoute = ''; renderSwitch(); };
 
-const KIND = { system: '系统', local: '本机', manual: '手动', direct: '' };
-function rowHtml(r, i) {
-  const addr = r.address ? r.address.replace(/:(\d+)$/, '<span class="port">:$1</span>') : '直接连接';
-  const tags = (r.kind !== 'direct' ? `<span class="tag">${KIND[r.kind]}</span>` : '') + (r.type ? `<span class="tag">${r.type}</span>` : '');
-  const sub = r.checking ? '<span class="spin"></span> 检测中…'
-    : r.ok ? `可用 · ${r.ms} ms${r.label ? ' · ' + esc(r.label) : ''}`
-    : `${r.type ? r.type.toLowerCase() + '：' : ''}无法使用${r.error ? '（' + esc(r.error) + '）' : ''}`;
-  const del = r.kind === 'manual'
-    ? `<button class="icon-btn" type="button" data-del="${esc(r.proxy)}" aria-label="删除 ${esc(r.address)}" title="删除">${icon('trash')}</button>` : '';
-  return `<div class="row"><div class="t"><b>${addr}${tags}</b><small class="${r.checking ? '' : r.ok ? 'ok' : 'bad'}">${sub}</small></div>${del}</div>`;
+function rowHtml(p, i) {
+  const c = checks[addrOf(p)];
+  const addr = esc(addrOf(p)).replace(/:(\d+)$/, '<span class="port">:$1</span>');
+  const type = /^socks/i.test(p) ? 'SOCKS5' : 'HTTP';
+  let sub;
+  if (!c) sub = `<small>${t('notTested')}</small>`;
+  else if (c.testing) sub = `<small><span class="spin"></span> ${t('testing')}</small>`;
+  else {
+    const parts = (c.sites || []).map((s) => s.ok ? `${s.name} ✓ ${s.ms} ms` : `${s.name} ✗ ${esc(s.error)}`).join(' · ');
+    sub = `<small class="${c.ok ? 'ok' : 'bad'} selectable">${c.ok ? '' : esc(c.type ? c.type.toLowerCase() + ': ' : '') + t('unusable') + ' — '}${parts || esc(c.error || '')}</small>`;
+  }
+  return `<div class="row prow" tabindex="0" data-i="${i}">
+      <span class="tick">${i === 0 ? icon('check') : ''}</span>
+      <div class="t"><b>${addr}<span class="tag">${type}</span>${i === 0 ? `<span class="tag first">${t('firstTag')}</span>` : ''}</b>${sub}</div>
+      <button class="icon-btn" type="button" data-del="${i}" aria-label="${t('del')} ${esc(addrOf(p))}" title="${t('del')}">${icon('trash')}</button>
+    </div>`;
 }
-function renderRows(list, checking) {
+function renderRows() {
   const rows = $('#rows');
-  rows.innerHTML = list.map(rowHtml).join('')
-    + (checking ? '<div class="row"><div class="t"><small><span class="spin"></span> 正在找本机的代理软件、测试能不能用…</small></div></div>' : '');
+  rows.innerHTML = myProxies.length ? myProxies.map(rowHtml).join('')
+    : `<div class="row"><div class="t"><small>${t('emptyList')}</small></div></div>`;
+  $$('.prow', rows).forEach((r) => {
+    const pickFirst = (e) => {
+      if (e.target.closest('[data-del]')) return;
+      const i = +r.dataset.i;
+      if (i > 0) { myProxies.unshift(myProxies.splice(i, 1)[0]); saveProxies(); renderRows(); renderSwitch(); }
+    };
+    r.addEventListener('click', pickFirst);
+    r.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickFirst(e); } });
+  });
   $$('[data-del]', rows).forEach((b) => b.onclick = () => {
-    const addr = b.dataset.del.split('://')[1];          // type may have been auto-corrected
-    myProxies = myProxies.filter((x) => normProxy(x).split('://')[1] !== addr);
-    saveProxies();
-    checkNet();
+    const p = myProxies.splice(+b.dataset.del, 1)[0];
+    delete checks[addrOf(p)];
+    saveProxies(); renderRows(); renderSwitch();
   });
 }
-function normProxy(v) {
-  v = v.trim();
-  if (!v.includes('://')) v = 'http://' + v;
-  return v.replace(/^socks5h:|^socks:/i, 'socks5:').replace(/^https:/i, 'http:').toLowerCase();
-}
-let checkSeq = 0;
-async function checkNet() {
-  const seq = ++checkSeq;
-  renderRows(myProxies.map((p) => ({ kind: 'manual', proxy: normProxy(p), address: normProxy(p).split('://')[1], type: /^socks/i.test(normProxy(p)) ? 'SOCKS5' : 'HTTP', checking: true })), true);
+async function testOne(p) {
+  checks[addrOf(p)] = { testing: true }; renderRows();
   try {
-    const d = await api('/api/net', netPayload());
-    if (seq !== checkSeq) return;
-    renderRows(d.routes);
-    $('#lastrow').hidden = !d.last;
-    $('#lastroute').textContent = d.last || '';
-  } catch (e) { if (seq === checkSeq) $('#rows').innerHTML = '<div class="row"><div class="t"><small class="bad">检测失败</small></div></div>'; }
+    const r = await api('/api/check-proxy', { proxy: p });
+    checks[addrOf(p)] = r;
+    if (r.proxy && r.proxy !== p) {           // type corrected (e.g. typed http, port is socks5)
+      const i = myProxies.indexOf(p);
+      if (i >= 0) { myProxies[i] = r.proxy; saveProxies(); }
+    }
+    return r;
+  } catch (e) { checks[addrOf(p)] = { ok: false, error: t('noResponse') }; }
+  finally { renderRows(); }
 }
-$('#redetect').onclick = checkNet;
-$$('.nav').forEach((n) => n.addEventListener('click', () => { if (n.dataset.view === 'settings') checkNet(); }));
+$('#testall').onclick = () => myProxies.slice().forEach(testOne);
 
 $('#addbtn').onclick = () => { $('#addrow').hidden = false; $('#adderr').textContent = ''; $('#newproxy').focus(); };
 $('#addcancel').onclick = () => { $('#addrow').hidden = true; $('#newproxy').value = ''; };
 async function addProxy() {
   const v = $('#newproxy').value.trim();
-  if (!v) { $('#adderr').textContent = '先填代理地址，例如 127.0.0.1:7890'; return; }
+  if (!v) { $('#adderr').textContent = t('addEmpty'); return; }
   $('#addok').disabled = true;
-  $('#adderr').textContent = '';
   try {
-    const d = await api('/api/check-proxy', { proxy: v });
-    if (!d.proxy) { $('#adderr').textContent = d.error; return; }
-    const addr = d.proxy.split('://')[1];
-    myProxies = myProxies.filter((x) => normProxy(x).split('://')[1] !== addr);
-    myProxies.unshift(d.proxy);
+    const r = await api('/api/check-proxy', { proxy: v });
+    if (!r.proxy) { $('#adderr').textContent = r.error; return; }
+    myProxies = myProxies.filter((x) => addrOf(x) !== addrOf(r.proxy));
+    myProxies.push(r.proxy);
+    checks[addrOf(r.proxy)] = r;
     saveProxies();
-    $('#newproxy').value = '';
-    $('#addrow').hidden = true;
-    checkNet();
-  } finally { $('#addok').disabled = false; }
+    $('#newproxy').value = ''; $('#addrow').hidden = true;
+    renderRows(); renderSwitch();
+  } catch (e) { $('#adderr').textContent = t('noResponse'); }
+  finally { $('#addok').disabled = false; }
 }
 $('#addok').onclick = addProxy;
 $('#newproxy').addEventListener('keydown', (e) => { if (e.key === 'Enter') addProxy(); if (e.key === 'Escape') $('#addcancel').click(); });
 $('#newproxy').addEventListener('input', () => { $('#adderr').textContent = ''; });
 
-let folder = '';
+/* ======================= folder, version, quit ======================= */
 function ping() {
   api('/api/ping').then((d) => {
-    folder = d.folder;
+    INFO = d;
     $('#folder2').textContent = d.folder;
-    $('#folderbtn').textContent = '保存到 Save to：' + d.folder;
+    $('#folderbtn').textContent = t('saveTo') + d.folder;
     $('#ver').textContent = 'v' + d.version;
-    $('#ver2').textContent = 'ClipSaver v' + d.version;
-    $('#quit').hidden = !!d.window;   // in the app window, closing the window quits
+    $('#ver2').textContent = `ClipSaver v${d.version} · ${d.platform}`;
+    $('#quit').hidden = !!d.window;
   }).catch(() => {});
 }
-ping(); setInterval(ping, 20000);
 $('#folderbtn').onclick = () => api('/api/open-folder', {});
 $('#openfolder').onclick = () => api('/api/open-folder', {});
-$('#quit').onclick = async () => {
-  try { await api('/api/quit', {}); } catch (e) {}
-  document.body.innerHTML = '<div style="padding:40px;font-size:18px">已退出 · Closed。可以关掉这个页面了。</div>';
-};
+$('#quit').onclick = async () => { try { await api('/api/quit', {}); } catch (e) {} document.body.innerHTML = '<div style="padding:40px;font-size:18px">Closed · 已退出</div>'; };
 
-/* ---------- find ---------- */
+/* ======================= find ======================= */
 let current = null;
+function updateGo() {
+  const has = $('#url').value.trim().length > 0;
+  $('#go').innerHTML = has ? `${icon('search')}${t('btnFind')}` : `${icon('paste')}${t('btnPaste')}`;
+  $('#clear').hidden = !has;
+}
+$('#url').addEventListener('input', updateGo);
+$('#clear').onclick = () => { $('#url').value = ''; updateGo(); $('#url').focus(); };
 
-$('#paste').onclick = async () => {
+$('#form').onsubmit = async (e) => {
+  e.preventDefault();
+  if ($('#url').value.trim()) return find();
   let text = '';
-  try { text = (await api('/api/clipboard')).text || ''; } catch (e) {}
-  if (!text) { try { text = await navigator.clipboard.readText(); } catch (e) {} }
-  text = text.trim();
-  if (!text) { $('#url').focus(); showMsg('剪贴板里没有内容。先复制帖子链接，再点「粘贴」。', false); return; }
-  $('#url').value = text;
+  try { text = (await api('/api/clipboard')).text || ''; } catch (err) {}
+  if (!text) { try { text = await navigator.clipboard.readText(); } catch (err) {} }
+  text = (text || '').trim();
+  if (!text) { showMsg(t('clipEmpty'), false); $('#url').focus(); return; }
+  $('#url').value = text; updateGo();
   find();
 };
-$('#form').onsubmit = (e) => { e.preventDefault(); find(); };
 
-function showMsg(text, bad) {
+function showEmpty() {
+  out.innerHTML = `<div class="empty">
+      <div class="big">${icon('film')}</div>
+      <h2>${t('emptyTitle')}</h2>
+      <div>${t('emptySites')}</div>
+      <div class="legend">
+        <span><span class="chip main">${t('legMain')}</span> ${t('legMainD')}</span>
+        <span><span class="chip quote">${t('legQuote')}</span> ${t('legQuoteD')}</span>
+        <span><span class="chip cardsrc">${t('legCard')}</span> ${t('legCardD')}</span>
+      </div></div>`;
+}
+
+function showMsg(text, bad, detail) {
   $('#dock').hidden = true;
-  out.innerHTML = `<div class="msg ${bad ? 'bad' : ''}">${icon(bad ? 'alert' : 'info')}<div>${esc(text)}</div></div>`;
+  current = null;
+  const report = [text, detail ? 'Detail: ' + detail : '', `ClipSaver v${INFO.version} · ${INFO.platform}`,
+    `Proxy: ${proxyOn ? 'on ' + JSON.stringify(myProxies) : 'off'}`, `Link: ${$('#url').value.trim()}`].filter(Boolean).join('\n');
+  out.innerHTML = `<div class="msg ${bad ? 'bad' : ''}">${icon(bad ? 'alert' : 'info')}<div class="body">
+      <div class="selectable">${esc(text)}</div>
+      ${detail ? `<div class="detail selectable" title="${t('techInfo')}">${esc(detail)}</div>` : ''}
+      ${bad ? `<div class="errtools"><button class="btn small" type="button" id="copyerr">${icon('copy')}<span>${t('copyErr')}</span></button>
+        <button class="btn small" type="button" id="gonet">${icon('gear')}<span>${t('openNet')}</span></button></div>` : ''}
+    </div></div>`;
+  const c = $('#copyerr');
+  if (c) c.onclick = async () => { if (await copyText(report)) c.querySelector('span').textContent = t('copied'); };
+  const g = $('#gonet');
+  if (g) g.onclick = () => show('settings');
 }
 
 async function find() {
   const url = $('#url').value.trim();
   if (!url) { $('#url').focus(); return; }
-  $('#find').disabled = $('#paste').disabled = true;
+  $('#go').disabled = true;
   $('#dock').hidden = true;
-  out.innerHTML = `<div class="msg">${icon('search')}<div id="lookmsg">正在查找… Looking…</div></div>`;
-  const slow = setTimeout(() => {
-    const m = $('#lookmsg');
-    if (m) m.innerHTML = '还在找… 有些视频（比如从 Instagram 分享到 Threads 的）要像浏览器一样打开帖子才能读到，需要多等 10 秒左右。<br>如果一直不行，看看左边「设置 → 网络」里有没有能用的线路。';
-  }, 4000);
+  current = null;
+  out.innerHTML = `<div class="msg">${icon('search')}<div class="body" id="lookmsg">${t('looking')}</div></div>`;
+  const slow = setTimeout(() => { const m = $('#lookmsg'); if (m) m.textContent = t('slow'); }, 4000);
   try {
     const d = await api('/api/inspect', { url, ...netPayload() });
     clearTimeout(slow);
-    if (d.error) { showMsg(d.error, true); return; }
-    showRoute(d.route);
+    if (d.error) { showMsg(d.error, true, d.detail); return; }
+    if (d.route) { lastRoute = d.route; renderSwitch(); }
     current = d;
     render(d);
   } catch (err) {
     clearTimeout(slow);
-    showMsg('程序没响应，请重新打开 ClipSaver。', true);
+    showMsg(t('noResponse'), true, String(err));
   } finally {
-    $('#find').disabled = $('#paste').disabled = false;
+    $('#go').disabled = false;
   }
 }
 
 function chip(v) {
-  if (v.source === 'quote') return `<span class="chip quote">引用帖 @${esc(v.author)}</span>`;
-  if (v.source === 'card') return `<span class="chip cardsrc">卡片 Card</span>`;
-  return `<span class="chip main">本帖 This post</span>`;
+  if (v.source === 'quote') return `<span class="chip quote">${esc(t('chipQuote', v.author))}</span>`;
+  if (v.source === 'card') return `<span class="chip cardsrc">${t('chipCard')}</span>`;
+  return `<span class="chip main">${t('chipMain')}</span>`;
 }
 function qLabel(q) {
   if (q.width && q.height) {
@@ -566,31 +714,33 @@ function qLabel(q) {
     const tag = p >= 1080 ? 'Full HD' : p >= 720 ? 'HD' : 'SD';
     return [`${q.width}×${q.height}`, `${tag}${q.bitrate ? ' · ' + Math.round(q.bitrate / 1000) + ' kbps' : ''}`];
   }
-  return ['原画', 'Original'];
+  return [t('original'), 'MP4'];
 }
 
 function render(d) {
   const hasMain = d.videos.some((v) => v.source === 'main');
   const kinds = new Set(d.videos.map((v) => v.source));
   let note = '';
-  if (kinds.size > 1) note = '这条帖子里的视频来自不同地方，已分开标出。默认只选了本帖自己的视频。';
-  else if (!hasMain && kinds.has('quote')) note = '这条帖子本身没有视频，下面是它引用的那条帖子里的视频。';
-  else if (!hasMain && kinds.has('card')) note = '视频在帖子附带的卡片（常见于广告）里。';
-  const many = d.videos.length > 1;
+  if (kinds.size > 1) note = t('noteMixed');
+  else if (!hasMain && kinds.has('quote')) note = t('noteQuote');
+  else if (!hasMain && kinds.has('card')) note = t('noteCard');
+  const prevOn = $$('.video', out).length ? $$('.video', out).map((r) => r.classList.contains('on')) : null;
   out.innerHTML = `
     <div class="post">
       <div class="avatar">${esc((d.author || '?')[0])}</div>
       <div class="who"><b>@${esc(d.author)}</b><p>${esc(d.text || '')}</p></div>
       <span class="site">${d.site === 'x' ? 'X' : 'Threads'}</span>
     </div>
-    ${note ? `<div class="msg">${icon('info')}<div>${note}</div></div>` : ''}
+    ${note ? `<div class="msg">${icon('info')}<div class="body">${note}</div></div>` : ''}
     <div class="section-head">
-      <h2>找到 ${d.videos.length} 个视频 <span class="en">${d.videos.length} video${many ? 's' : ''}</span></h2>
-      ${many ? '<button class="linkish" id="all" type="button">全选 Select all</button>' : ''}
+      <h2>${t('found', d.videos.length)}</h2>
+      ${d.videos.length > 1 ? `<button class="linkish" id="all" type="button">${t('selectAll')}</button>` : ''}
     </div>
     <div class="videos">
-      ${d.videos.map((v, i) => `
-        <article class="video ${v.source === 'main' || !hasMain ? 'on' : ''}" data-i="${i}" data-q="0">
+      ${d.videos.map((v, i) => {
+        const on = prevOn ? prevOn[i] : (v.source === 'main' || !hasMain);
+        return `
+        <article class="video ${on ? 'on' : ''}" data-i="${i}" data-q="0">
           <div class="thumbbox">
             ${v.thumb ? `<img src="${esc(v.thumb)}" alt="" referrerpolicy="no-referrer">`
                       : `<video src="${esc(v.variants[0].url)}#t=0.5" preload="metadata" muted playsinline></video>`}
@@ -599,31 +749,23 @@ function render(d) {
           </div>
           <div class="vbody">
             <div class="vtop">
-              <div class="t"><b>第 ${i + 1} 个${v.kind === 'gif' ? ' · GIF' : ''}</b>
+              <div class="t"><b>${t('nth', i + 1)}${v.kind === 'gif' ? ' · GIF' : ''}</b>
                 <div class="meta">${[v.width && v.height ? `${v.width}×${v.height}` : '', 'MP4'].filter(Boolean).join(' · ')}</div></div>
-              <button class="pick" type="button" aria-pressed="${v.source === 'main' || !hasMain}"><span class="box">${icon('check')}</span>选中</button>
+              <button class="pick" type="button" aria-pressed="${on}"><span class="box">${icon('check')}</span>${t('pick')}</button>
             </div>
-            ${v.variants.length > 1 ? `<div class="quals" role="group" aria-label="清晰度">${v.variants.map((q, k) => {
+            ${v.variants.length > 1 ? `<div class="quals" role="group">${v.variants.map((q, k) => {
               const [a, b] = qLabel(q);
-              return `<button class="q" type="button" data-k="${k}" aria-pressed="${k === 0}"><b>${a}</b><span>${k === 0 ? '最高 · ' : ''}${b}</span></button>`;
+              return `<button class="q" type="button" data-k="${k}" aria-pressed="${k === 0}"><b>${a}</b><span>${k === 0 ? t('best') + ' · ' : ''}${b}</span></button>`;
             }).join('')}</div>` : ''}
             <div class="bar" hidden><i></i></div>
             <div class="state"></div>
           </div>
-        </article>`).join('')}
+        </article>`; }).join('')}
     </div>`;
-
   $$('.video', out).forEach((row) => {
     const v = d.videos[+row.dataset.i];
-    $('.pick', row).onclick = () => {
-      row.classList.toggle('on');
-      $('.pick', row).setAttribute('aria-pressed', String(row.classList.contains('on')));
-      updateSummary();
-    };
-    $$('.q', row).forEach((b) => b.onclick = () => {
-      row.dataset.q = b.dataset.k;
-      $$('.q', row).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    });
+    $('.pick', row).onclick = () => { row.classList.toggle('on'); $('.pick', row).setAttribute('aria-pressed', String(row.classList.contains('on'))); updateSummary(); };
+    $$('.q', row).forEach((b) => b.onclick = () => { row.dataset.q = b.dataset.k; $$('.q', row).forEach((x) => x.setAttribute('aria-pressed', String(x === b))); });
     const vid = $('video', row);
     if (vid) vid.addEventListener('loadedmetadata', () => {
       if (!v.duration) { const dur = $('.dur', row); dur.textContent = fmtDur(vid.duration); dur.hidden = false; }
@@ -634,12 +776,14 @@ function render(d) {
   if (all) all.onclick = () => { $$('.video', out).forEach((r) => { r.classList.add('on'); $('.pick', r).setAttribute('aria-pressed', 'true'); }); updateSummary(); };
   $('#dock').hidden = false;
   $('#dl').disabled = false;
+  if (INFO.folder) $('#folderbtn').textContent = t('saveTo') + INFO.folder;
   updateSummary();
 }
 
 function updateSummary() {
+  if (!current) return;
   const n = $$('.video.on', out).length;
-  $('#summary').textContent = n ? `准备下载 ${n} 个视频 · Ready` : '还没选视频 · Nothing selected';
+  $('#summary').textContent = n ? t('ready', n) : t('nothing');
   $('#dl').disabled = !n;
 }
 
@@ -647,10 +791,10 @@ $('#dl').onclick = async () => {
   const rows = $$('.video.on', out);
   if (!rows.length) return;
   $('#dl').disabled = true;
-  $('#summary').textContent = `正在下载 ${rows.length} 个视频…`;
+  $('#summary').textContent = t('downloading', rows.length);
   const results = await Promise.all(rows.map((row) => downloadOne(current, row)));
   const ok = results.filter(Boolean).length;
-  $('#summary').textContent = ok === rows.length ? `✓ ${ok} 个视频已保存 · Done` : `${ok} 个成功，${rows.length - ok} 个失败`;
+  $('#summary').textContent = ok === rows.length ? t('doneAll', ok) : t('partial', ok, rows.length - ok);
   $('#dl').disabled = false;
 };
 
@@ -660,29 +804,41 @@ async function downloadOne(d, row) {
   const q = v.variants[+row.dataset.q || 0];
   const bar = $('.bar', row); const fill = $('i', bar); const state = $('.state', row);
   const name = `${d.site}_${d.id}` + (d.videos.length > 1 ? `_${i + 1}` : '') + (v.source === 'quote' ? '_quoted' : '');
-  bar.hidden = false; fill.style.width = '0'; state.className = 'state'; state.textContent = '开始下载…';
+  bar.hidden = false; fill.style.width = '0'; state.className = 'state'; state.textContent = t('starting');
   let job;
   try { job = (await api('/api/download', { url: q.url, name, site: d.site, ...netPayload() })).job; } catch (e) { job = null; }
-  if (!job) { state.className = 'state bad'; state.textContent = '没能开始下载'; return false; }
+  if (!job) { state.className = 'state bad'; state.textContent = t('cantStart'); return false; }
   for (;;) {
     await new Promise((r) => setTimeout(r, 400));
     let s;
-    try { s = await api('/api/job/' + job); } catch (e) { state.className = 'state bad'; state.textContent = '程序没响应'; return false; }
+    try { s = await api('/api/job/' + job); } catch (e) { state.className = 'state bad'; state.textContent = t('noResponse'); return false; }
     if (s.total) fill.style.width = Math.min(100, (s.done / s.total) * 100) + '%';
-    if (s.state === 'running') { state.textContent = `下载中 ${fmtSize(s.done)}${s.total ? ' / ' + fmtSize(s.total) : ''}`; continue; }
+    if (s.state === 'running') { state.textContent = `${t('dling')} ${fmtSize(s.done)}${s.total ? ' / ' + fmtSize(s.total) : ''}`; continue; }
     if (s.state === 'ok') {
       fill.style.width = '100%';
       state.className = 'state ok';
-      state.innerHTML = `${icon('check')}已保存 ${esc(s.name)} · ${fmtSize(s.done)} <button class="linkish" type="button">在文件夹中显示</button>`;
+      state.innerHTML = `<div class="line">${icon('check')}<span class="selectable">${t('saved')} ${esc(s.name)} · ${fmtSize(s.done)}</span> <button class="linkish" type="button">${t('show')}</button></div>`;
       $('button', state).onclick = () => api('/api/reveal', { path: s.path });
       return true;
     }
     bar.hidden = true;
     state.className = 'state bad';
-    state.textContent = '✗ ' + s.error;
+    state.innerHTML = `<div class="selectable">✗ ${esc(s.error)}</div>${s.detail ? `<div class="detail selectable">${esc(s.detail)}</div>` : ''}
+      <div class="errtools"><button class="btn small" type="button">${icon('copy')}<span>${t('copyErr')}</span></button></div>`;
+    const cb = $('.errtools button', state);
+    cb.onclick = async () => {
+      const rep = [s.error, s.detail ? 'Detail: ' + s.detail : '', `ClipSaver v${INFO.version} · ${INFO.platform}`, `Video: ${q.url.slice(0, 120)}`].filter(Boolean).join('\n');
+      if (await copyText(rep)) cb.querySelector('span').textContent = t('copied');
+    };
     return false;
   }
 }
+
+/* ======================= start ======================= */
+LANG = load('lang') === 'en' ? 'en' : 'zh';
+setTheme(load('accent') || 'orange');
+ping(); setInterval(ping, 20000);
+applyLang();
 </script>
 </body>
 </html>
