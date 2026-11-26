@@ -21,11 +21,6 @@ jobs:
       - name: Unit tests
         run: python -m unittest discover -s tests -t . -v
 
-      - name: Make icon
-        run: |
-          python tools/make_icon.py assets/icon.iconset
-          iconutil -c icns assets/icon.iconset -o assets/ClipSaver.icns
-
       - name: Build ClipSaver.app
         env:
           APP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'v0.0.0' }}
@@ -81,11 +76,11 @@ jobs:
 
       - name: Build ClipSaver.exe
         run: |
-          python tools/make_icon.py assets/ClipSaver.ico
           pip install pyinstaller==6.11.1 pywebview==5.4
           pyinstaller --noconfirm --onefile --noconsole --name ClipSaver \
-            --icon assets/ClipSaver.ico \
+            --icon art/ClipSaver.ico \
             --add-data "clipsaver/ui.html;clipsaver" \
+            --add-data "clipsaver/logo.png;clipsaver" \
             --exclude-module tkinter --exclude-module unittest \
             main.py
           mv dist/ClipSaver.exe dist/ClipSaver-Windows.exe

@@ -30,3 +30,8 @@
 ## Backlog
 - Intel Mac build if ever needed.
 - If X syndication starts failing: fall back to api.fxtwitter.com.
+
+## v0.5.0 (2026-11-26)
+- Icon = the user's own logo design (art/logo-design.png): dark tile, white X + loop, thicker coral arrow. Rebuild with tools/build_icon.py (needs Pillow; art/ files are committed, CI uses them).
+- Default theme coral #ff7a45 (key "accent"; only explicit choices saved). Quote label now light blue so it differs from coral.
+- tools/make_icon.py is unused now (deleting it was blocked by a safety check; left in place).

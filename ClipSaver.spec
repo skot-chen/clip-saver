@@ -3,7 +3,7 @@
 
 a = Analysis(
     ['main.py'],
-    datas=[('clipsaver/ui.html', 'clipsaver')],
+    datas=[('clipsaver/ui.html', 'clipsaver'), ('clipsaver/logo.png', 'clipsaver')],
     excludes=['tkinter', 'unittest', 'pydoc', 'test'],
 )
 pyz = PYZ(a.pure)
@@ -17,7 +17,7 @@ coll = COLLECT(exe, a.binaries, a.datas, name='ClipSaver')
 app = BUNDLE(
     coll,
     name='ClipSaver.app',
-    icon='assets/ClipSaver.icns' if __import__('os').path.exists('assets/ClipSaver.icns') else None,
+    icon='art/ClipSaver.icns',   # made by tools/build_icon.py from the user's logo design
     bundle_identifier='io.github.skot-chen.clipsaver',
     info_plist={
         'CFBundleShortVersionString': __import__('os').environ.get('APP_VERSION', '0.1.0'),

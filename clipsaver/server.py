@@ -159,6 +159,8 @@ class Handler(BaseHTTPRequestHandler):
         LAST_PING[0] = time.time()
         if self.path in ('/', '/index.html'):
             self._send(200, UI_FILE.read_bytes(), 'text/html; charset=utf-8')
+        elif self.path == '/logo.png':
+            self._send(200, (UI_FILE.parent / 'logo.png').read_bytes(), 'image/png')
         elif self.path == '/api/ping':
             self._send(200, {'app': 'clipsaver', 'folder': str(save_dir()), 'version': __version__,
                              'window': bool(WINDOW), 'platform': sys.platform})

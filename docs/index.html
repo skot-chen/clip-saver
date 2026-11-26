@@ -11,9 +11,9 @@
     --ink: #17202e;
     --paper: #f5f7fb;
     --card: #ffffff;
-    --blue: #16a34a;
-    --blue-soft: #dcf5e4;
-    --orange-soft: #fff1e0;
+    --blue: #e0562a;
+    --blue-soft: #ffe4d9;
+    --orange-soft: #dff1ff;
     --violet-soft: #f1e8ff;
     --line: #dfe5ef;
     --muted: #667085;
@@ -26,9 +26,9 @@
       --ink: #e8ecf3;
       --paper: #0f1420;
       --card: #171e2d;
-      --blue: #22c55e;
-      --blue-soft: #143322;
-      --orange-soft: #3a2a17;
+      --blue: #ff7a45;
+      --blue-soft: #3d2117;
+      --orange-soft: #15304a;
       --violet-soft: #2c2142;
       --line: #263049;
       --muted: #98a2b3;
@@ -48,7 +48,7 @@
 
   /* hero */
   .hero { text-align: center; padding: 64px 20px 28px; }
-  .hero .icon { width: 112px; height: 112px; filter: drop-shadow(0 10px 24px rgba(22,163,74,.28)); }
+  .hero .icon { width: 112px; height: 112px; filter: drop-shadow(0 10px 24px rgba(224,86,42,.3)); }
   .hero h1 { font-size: 2.2rem; letter-spacing: .01em; margin: 14px 0 6px; }
   .hero .tag { font-size: 1.15rem; }
   .hero .sub { color: var(--muted); margin-top: 4px; }
@@ -59,7 +59,7 @@
     display: inline-flex; align-items: center; gap: 8px;
     background: var(--blue); color: #fff; text-decoration: none;
     padding: 12px 30px; border-radius: 999px; font-size: 1rem; font-weight: 600;
-    box-shadow: 0 6px 18px rgba(22,163,74,.28);
+    box-shadow: 0 6px 18px rgba(224,86,42,.3);
   }
   .btn:hover { filter: brightness(1.08); }
   .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); box-shadow: none; font-weight: 500; }
@@ -179,7 +179,7 @@
     <img src="https://img.shields.io/badge/macOS-Apple_Silicon-black?logo=apple" alt="macOS Apple Silicon">
     <img src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4" alt="Windows 10 / 11">
     <img src="https://img.shields.io/github/v/release/skot-chen/clip-saver?label=%E7%89%88%E6%9C%AC" alt="最新版本">
-    <img src="https://img.shields.io/badge/%E6%95%B0%E6%8D%AE-%E4%B8%8D%E4%B8%8A%E4%BC%A0-16a34a" alt="不上传任何数据">
+    <img src="https://img.shields.io/badge/%E6%95%B0%E6%8D%AE-%E4%B8%8D%E4%B8%8A%E4%BC%A0-ff7a45" alt="不上传任何数据">
   </div>
   <div class="dl">
     <a class="btn" id="dl-mac" href="https://github.com/skot-chen/clip-saver/releases/latest/download/ClipSaver-macOS-arm64.dmg">
@@ -199,12 +199,12 @@
   <div class="shots">
     <figure class="shot">
       <div class="frame"><div class="bar"><i></i><i></i><i></i></div>
-        <button class="zoom" type="button" aria-label="放大查看截图"><img src="assets/shot-mixed.jpg" alt="一条 X 帖子：本帖视频默认勾选，引用帖里的视频单独标出" width="722" height="472"></button></div>
+        <button class="zoom" type="button" aria-label="放大查看截图"><img src="assets/shot-mixed.jpg" alt="一条 X 帖子：本帖视频默认勾选，引用帖里的视频单独标出" width="786" height="514"></button></div>
       <figcaption><b>分清视频从哪来</b>本帖自己的视频默认选中，引用帖里的单独标出来</figcaption>
     </figure>
     <figure class="shot">
       <div class="frame"><div class="bar"><i></i><i></i><i></i></div>
-        <button class="zoom" type="button" aria-label="放大查看截图"><img src="assets/shot-carousel.jpg" alt="一条 Threads 轮播帖：4 个视频全部下载完成" width="722" height="472"></button></div>
+        <button class="zoom" type="button" aria-label="放大查看截图"><img src="assets/shot-carousel.jpg" alt="一条 Threads 轮播帖：4 个视频全部下载完成" width="786" height="514"></button></div>
       <figcaption><b>多个视频一次存</b>Threads 轮播里的 4 段视频，选中后同时下载</figcaption>
     </figure>
   </div>
