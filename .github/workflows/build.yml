@@ -65,6 +65,8 @@ jobs:
 
   windows:
     runs-on: windows-latest
+    env:
+      PYTHONIOENCODING: utf-8   # test scripts print Chinese
     defaults:
       run:
         shell: bash
