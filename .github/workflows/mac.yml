@@ -28,9 +28,10 @@ jobs:
 
       - name: Build ClipSaver.app
         env:
-          APP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0' }}
+          APP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'v0.0.0' }}
         run: |
           pip install pyinstaller==6.11.1
+          export APP_VERSION="${APP_VERSION#v}"
           pyinstaller --noconfirm ClipSaver.spec
           ls -la dist
 
@@ -42,22 +43,29 @@ jobs:
           python tests/smoke_live.py http://127.0.0.1:8790 "$RUNNER_TEMP/out"
           curl -s -X POST -d '{}' http://127.0.0.1:8790/api/quit
 
-      - name: Zip
+      - name: Make dmg (drag ClipSaver into Applications)
         run: |
-          cd dist
-          ditto -c -k --sequesterRsrc --keepParent ClipSaver.app ClipSaver-mac.zip
-          ls -la ClipSaver-mac.zip
+          mkdir -p dmg
+          cp -R dist/ClipSaver.app dmg/
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname ClipSaver -srcfolder dmg -fs HFS+ -format UDZO -ov dist/ClipSaver-macOS-arm64.dmg
+          hdiutil verify dist/ClipSaver-macOS-arm64.dmg
+          # open the dmg like a user would and check the app inside
+          hdiutil attach -nobrowse -mountpoint /tmp/cs dist/ClipSaver-macOS-arm64.dmg
+          ls -la /tmp/cs
+          test -x /tmp/cs/ClipSaver.app/Contents/MacOS/ClipSaver
+          test -L /tmp/cs/Applications
+          hdiutil detach /tmp/cs
+          ls -la dist/ClipSaver-macOS-arm64.dmg
 
       - uses: actions/upload-artifact@v4
         with:
           name: ClipSaver-mac
-          path: dist/ClipSaver-mac.zip
+          path: dist/ClipSaver-macOS-arm64.dmg
 
       - name: Publish release
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" dist/ClipSaver-mac.zip \
-            --title "ClipSaver ${{ github.ref_name }}" \
-            --notes-file RELEASE_NOTES.md
+          gh release create "${{ github.ref_name }}" dist/ClipSaver-macOS-arm64.dmg             --title "ClipSaver ${{ github.ref_name }}"             --notes-file RELEASE_NOTES.md

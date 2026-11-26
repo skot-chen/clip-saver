@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClipSaver — 贴个链接，把 X 和 Threads 的视频存下来</title>
+<meta name="description" content="Mac 小工具：粘贴 X 或 Threads 帖子链接，列出所有视频，分清本帖、引用帖和广告卡片，一键保存 mp4。">
+<link rel="icon" href="assets/icon.png">
+<style>
+  :root {
+    --ink: #17202e;
+    --paper: #f5f7fb;
+    --card: #ffffff;
+    --blue: #2563eb;
+    --blue-soft: #e6eefe;
+    --orange-soft: #fff1e0;
+    --violet-soft: #f1e8ff;
+    --line: #dfe5ef;
+    --muted: #667085;
+    --code-bg: #e9eef7;
+    --pre-bg: #17202e;
+    --pre-ink: #e8edf6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8ecf3;
+      --paper: #0f1420;
+      --card: #171e2d;
+      --blue: #5b8cff;
+      --blue-soft: #1c2a4a;
+      --orange-soft: #3a2a17;
+      --violet-soft: #2c2142;
+      --line: #263049;
+      --muted: #98a2b3;
+      --code-bg: #1f2840;
+      --pre-bg: #0a0e17;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.8;
+  }
+  a { color: var(--blue); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+
+  /* hero */
+  .hero { text-align: center; padding: 64px 20px 28px; }
+  .hero .icon { width: 112px; height: 112px; filter: drop-shadow(0 10px 24px rgba(37,99,235,.28)); }
+  .hero h1 { font-size: 2.2rem; letter-spacing: .01em; margin: 14px 0 6px; }
+  .hero .tag { font-size: 1.15rem; }
+  .hero .sub { color: var(--muted); margin-top: 4px; }
+  .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+  .badges img { height: 20px; }
+  .dl { margin-top: 26px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--blue); color: #fff; text-decoration: none;
+    padding: 12px 30px; border-radius: 999px; font-size: 1rem; font-weight: 600;
+    box-shadow: 0 6px 18px rgba(37,99,235,.28);
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); box-shadow: none; font-weight: 500; }
+  .btn.ghost:hover { border-color: var(--ink); }
+  .btn svg { width: 18px; height: 18px; }
+  .note { margin-top: 12px; font-size: .85rem; color: var(--muted); }
+
+  /* screenshots */
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: 36px 0 8px; }
+  .shot { text-align: center; }
+  .shot .frame {
+    border-radius: 14px; overflow: hidden; background: var(--card);
+    border: 1px solid var(--line); box-shadow: 0 16px 40px rgba(23,32,46,.12);
+  }
+  .shot .bar { display: flex; gap: 6px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  .shot .bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
+  .shot img { display: block; width: 100%; height: auto; }
+  .shot figcaption { margin-top: 12px; color: var(--muted); font-size: .9rem; }
+  .shot figcaption b { display: block; color: var(--ink); font-size: 1rem; }
+
+  /* sections */
+  section.block { padding: 44px 0 6px; }
+  section.block h2 { font-size: 1.3rem; margin-bottom: 16px; padding-left: 12px; border-left: 4px solid var(--blue); }
+  section.block > p { color: var(--muted); margin-bottom: 14px; }
+  code { background: var(--code-bg); padding: 1px 7px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; }
+  pre { background: var(--pre-bg); color: var(--pre-ink); border-radius: 12px; padding: 14px 18px; overflow-x: auto; font-size: .88rem; margin-top: 10px; }
+
+  .features { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .features div, .labels div, .faq div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .features b { display: block; margin-bottom: 4px; }
+  .features p, .labels p, .faq p { color: var(--muted); font-size: .93rem; line-height: 1.7; }
+
+  /* how it tells videos apart */
+  .labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .chip { display: inline-block; font-size: .85rem; padding: 1px 10px; border-radius: 99px; margin-bottom: 6px; font-weight: 600; }
+  .chip.main { background: var(--blue-soft); }
+  .chip.quote { background: var(--orange-soft); }
+  .chip.card { background: var(--violet-soft); }
+
+  /* steps */
+  .steps { list-style: none; counter-reset: step; }
+  .steps > li { counter-increment: step; display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px dashed var(--line); }
+  .steps > li:last-child { border-bottom: none; }
+  .steps > li::before {
+    content: counter(step); flex: none; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--blue); color: #fff; font-size: .9rem; font-weight: 700; text-align: center; line-height: 28px; margin-top: 2px;
+  }
+  .steps > li > div { min-width: 0; }
+  .steps h3 { font-size: 1rem; margin-bottom: 2px; }
+  .steps p { color: var(--muted); font-size: .93rem; }
+
+  .faq { display: grid; gap: 10px; }
+  .faq b { display: block; }
+
+  footer { margin-top: 60px; border-top: 1px solid var(--line); padding: 24px 20px; text-align: center; color: var(--muted); font-size: .9rem; }
+  footer a { color: var(--ink); }
+
+  @media (max-width: 680px) {
+    .shots, .features, .labels { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 1.7rem; }
+    .hero { padding-top: 44px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <img class="icon" src="assets/icon.png" alt="ClipSaver 图标">
+  <h1>ClipSaver</h1>
+  <p class="tag">贴个链接，把 X 和 Threads 的视频存下来。</p>
+  <p class="sub">一条帖子里有好几个视频、视频其实在被引用的帖子里，它都能分清楚。</p>
+  <div class="badges">
+    <img src="https://img.shields.io/badge/macOS-Apple_Silicon-black?logo=apple" alt="macOS Apple Silicon">
+    <img src="https://img.shields.io/github/v/release/skot-chen/clip-saver?label=%E7%89%88%E6%9C%AC" alt="最新版本">
+    <img src="https://img.shields.io/badge/%E6%95%B0%E6%8D%AE-%E4%B8%8D%E4%B8%8A%E4%BC%A0-2563eb" alt="不上传任何数据">
+  </div>
+  <div class="dl">
+    <a class="btn" href="https://github.com/skot-chen/clip-saver/releases/latest/download/ClipSaver-macOS-arm64.dmg">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+      下载 Mac 版 dmg
+    </a>
+    <a class="btn ghost" href="https://github.com/skot-chen/clip-saver">GitHub 仓库</a>
+  </div>
+  <p class="note">Apple 芯片（M1 / M2 / M3 / M4）· 约 8 MB · 不用装别的东西</p>
+</header>
+
+<div class="wrap">
+
+  <div class="shots">
+    <figure class="shot">
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div>
+        <img src="assets/shot-mixed.jpg" alt="一条 X 帖子：本帖视频默认勾选，引用帖里的视频单独标出" width="772" height="612"></div>
+      <figcaption><b>分清视频从哪来</b>本帖自己的视频默认勾选，引用帖里的单独标出来</figcaption>
+    </figure>
+    <figure class="shot">
+      <div class="frame"><div class="bar"><i></i><i></i><i></i></div>
+        <img src="assets/shot-carousel.jpg" alt="一条 Threads 轮播帖：4 个视频全部下载完成" width="772" height="590"></div>
+      <figcaption><b>多个视频一次存</b>Threads 轮播里的 4 段视频，勾选后同时下载</figcaption>
+    </figure>
+  </div>
+
+  <section class="block">
+    <h2>它能做什么</h2>
+    <div class="features">
+      <div><b>X 和 Threads 都能用</b><p>x.com、twitter.com、threads.com、threads.net 的帖子链接，分享链接也行。</p></div>
+      <div><b>多个视频，自己挑</b><p>每个视频都有预览、时长和尺寸，想要哪几个就勾哪几个。</p></div>
+      <div><b>默认最高画质</b><p>自动选最清楚的版本，也可以换小一点的。存下来是普通 mp4，有画面也有声音。</p></div>
+      <div><b>直接联网，代理可选</b><p>平时不用设置。网络不通时，在设置里填一个代理地址就行。</p></div>
+      <div><b>不留记录</b><p>没有账号、没有历史记录，不上传任何东西。电脑上只多出你下载的视频。</p></div>
+      <div><b>用完就走</b><p>没有窗口，Dock 里也不占图标，在浏览器页面里操作。关掉页面，它过一会儿会自己退出。</p></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>为什么不会下错视频</h2>
+    <p>很多下载工具只抓页面上的第一个视频，结果下到回复、推荐，或者别人的视频。ClipSaver 只读这条帖子本身的数据，每个视频都标出来源：</p>
+    <div class="labels">
+      <div><span class="chip main">本帖</span><p>帖子自己发的视频。默认勾选。</p></div>
+      <div><span class="chip quote">引用帖 @某某</span><p>帖子引用了别人的帖子，视频在那条里面。帖子本身没有视频时会自动勾选。</p></div>
+      <div><span class="chip card">卡片 / 广告</span><p>藏在链接卡片里的视频，常见于广告。普通下载工具经常找不到。</p></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>安装</h2>
+    <ol class="steps">
+      <li><div>
+        <h3>下载</h3>
+        <p>点上面的按钮，下载 <code>ClipSaver-macOS-arm64.dmg</code>。</p>
+      </div></li>
+      <li><div>
+        <h3>拖进「应用程序」</h3>
+        <p>双击 dmg，把 ClipSaver 拖到旁边的 Applications 文件夹里。</p>
+      </div></li>
+      <li><div>
+        <h3>第一次打开</h3>
+        <p>这个软件没有付费给 Apple 签名，所以第一次打开时 Mac 会拦一下。点「完成」，然后打开 <b>系统设置 → 隐私与安全性</b>，往下找到 ClipSaver，点 <b>「仍要打开」</b>。之后就能直接双击打开了。</p>
+        <p>如果提示"已损坏，无法打开"，打开「终端」，运行下面这行再试：</p>
+        <pre>xattr -cr /Applications/ClipSaver.app</pre>
+      </div></li>
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2>使用</h2>
+    <ol class="steps">
+      <li><div><h3>双击 ClipSaver</h3><p>浏览器会自动打开它的页面。</p></div></li>
+      <li><div><h3>粘贴链接，点「查找视频」</h3><p>帖子里所有能下载的视频都会列出来。</p></div></li>
+      <li><div><h3>勾选，点「下载选中的」</h3><p>视频保存在「下载」文件夹，文件名像 <code>x_推文编号_1.mp4</code>。点「在文件夹中显示」可以直接找到。</p></div></li>
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2>下载不了？</h2>
+    <div class="faq">
+      <div><b>提示"连不上网站"</b><p>你的网络连不上 X 或 Threads。打开代理软件，在页面最下面的「设置」里填你的代理地址（代理软件里能看到，格式像 <code>http://127.0.0.1:端口号</code>），再试一次。</p></div>
+      <div><b>提示"没有能下载的视频"</b><p>帖子里只有图片，或者是直播、YouTube 这类外链视频，这些下载不了。</p></div>
+      <div><b>提示"看不到这条帖子"</b><p>帖子被删了、账号上了锁，或者要登录才能看。</p></div>
+      <div><b>提示"视频地址过期了"</b><p>页面放得太久了。重新点一下「查找视频」，再下载就行。</p></div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  个人做的小工具，只用来保存你有权保存的视频。有问题请到 <a href="https://github.com/skot-chen/clip-saver/issues">GitHub 提 Issue</a>
+</footer>
+
+</body>
+</html>

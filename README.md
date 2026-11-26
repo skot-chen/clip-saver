@@ -2,6 +2,8 @@
 
 A small Mac app for saving videos from **X (Twitter)** and **Threads** posts.
 
+**介绍页 / Homepage：https://skot-chen.github.io/clip-saver/**
+
 把 X 或 Threads 的帖子链接贴进去，就能看到这条帖子里所有能下载的视频，选好以后保存到「下载」文件夹。
 
 - **一条帖子有好几个视频时**：每个视频都列出来，带预览图、时长和清晰度，你自己勾选要哪几个。
@@ -13,8 +15,8 @@ A small Mac app for saving videos from **X (Twitter)** and **Threads** posts.
 
 ## 下载和安装（Mac，Apple 芯片：M1/M2/M3/M4）
 
-1. 打开 [Releases 页面](../../releases/latest)，下载 `ClipSaver-mac.zip`。
-2. 双击 zip 解压，把 `ClipSaver.app` 拖进「应用程序」文件夹。
+1. 下载 [ClipSaver-macOS-arm64.dmg](https://github.com/skot-chen/clip-saver/releases/latest/download/ClipSaver-macOS-arm64.dmg)（或者到 [Releases 页面](../../releases/latest) 下载）。
+2. 双击 dmg，把 `ClipSaver` 拖进旁边的 Applications（应用程序）文件夹。
 3. **第一次打开**：双击后 Mac 会提示"无法验证开发者"（因为这个软件没有花钱找 Apple 签名）。
    - 点「完成」，然后打开 **系统设置 → 隐私与安全性**，在下面找到 ClipSaver，点 **「仍要打开」**，再输入一次开机密码。
    - 如果提示"已损坏"，打开「终端」，粘贴下面这行后回车，再双击打开：
