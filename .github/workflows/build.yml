@@ -30,7 +30,7 @@ jobs:
         env:
           APP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'v0.0.0' }}
         run: |
-          pip install pyinstaller==6.11.1
+          pip install pyinstaller==6.11.1 pywebview==5.4
           export APP_VERSION="${APP_VERSION#v}"
           pyinstaller --noconfirm ClipSaver.spec
 
@@ -41,6 +41,10 @@ jobs:
             dist/ClipSaver.app/Contents/MacOS/ClipSaver &
           python tests/smoke_live.py http://127.0.0.1:8790 "$RUNNER_TEMP/out"
           curl -s -X POST -d '{}' http://127.0.0.1:8790/api/quit
+          sleep 2
+
+      - name: Test the app window opens and closes (Mac)
+        run: python tests/window_check.py dist/ClipSaver.app/Contents/MacOS/ClipSaver
 
       - name: Make dmg (drag ClipSaver into Applications)
         run: |
@@ -78,7 +82,7 @@ jobs:
       - name: Build ClipSaver.exe
         run: |
           python tools/make_icon.py assets/ClipSaver.ico
-          pip install pyinstaller==6.11.1
+          pip install pyinstaller==6.11.1 pywebview==5.4
           pyinstaller --noconfirm --onefile --noconsole --name ClipSaver \
             --icon assets/ClipSaver.ico \
             --add-data "clipsaver/ui.html;clipsaver" \
@@ -94,6 +98,10 @@ jobs:
           CLIPSAVER_NO_BROWSER=1 CLIPSAVER_DIR="$OUT" dist/ClipSaver-Windows.exe &
           python tests/smoke_live.py http://127.0.0.1:8790 "$OUT"
           curl -s -X POST -d '{}' http://127.0.0.1:8790/api/quit
+          sleep 2
+
+      - name: Test the app window opens and closes (Windows)
+        run: python tests/window_check.py dist/ClipSaver-Windows.exe
 
       - uses: actions/upload-artifact@v4
         with:

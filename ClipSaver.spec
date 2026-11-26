@@ -21,7 +21,7 @@ app = BUNDLE(
     bundle_identifier='io.github.skot-chen.clipsaver',
     info_plist={
         'CFBundleShortVersionString': __import__('os').environ.get('APP_VERSION', '0.1.0'),
-        'LSUIElement': True,          # no Dock icon: the window is a browser tab
+        'NSHighResolutionCapable': True,
         'NSHumanReadableCopyright': 'ClipSaver',
     },
 )

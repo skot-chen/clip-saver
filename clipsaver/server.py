@@ -175,7 +175,10 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, {'ok': True})
         elif self.path == '/api/quit':
             self._send(200, {'ok': True})
-            threading.Thread(target=self.server.shutdown, daemon=True).start()
+            threading.Thread(target=getattr(self.server, 'app_close', self.server.shutdown), daemon=True).start()
+        elif self.path == '/api/show':
+            bring_to_front()
+            self._send(200, {'window': bool(WINDOW)})
         else:
             self._send(404, {'error': 'not found'})
 
@@ -189,21 +192,73 @@ def already_running(port):
         return False
 
 
+WINDOW = []   # the app window, when running with one
+
+
+def bring_to_front():
+    for w in WINDOW:
+        try:
+            w.restore()
+            w.show()
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def close_app(httpd):
+    if WINDOW:
+        for w in WINDOW:
+            w.destroy()      # closing the window ends webview.start(), then main() stops the server
+    else:
+        httpd.shutdown()
+
+
+def run_window(url, httpd):
+    """Show the UI in a native app window. Returns False if that is not possible here."""
+    try:
+        import webview  # pywebview: WebKit on macOS, Edge WebView2 on Windows
+    except Exception:  # noqa: BLE001
+        return False
+    try:
+        window = webview.create_window('ClipSaver', url, width=880, height=780,
+                                       min_size=(420, 520), background_color='#f6f5f2')
+        WINDOW.append(window)
+        threading.Thread(target=httpd.serve_forever, daemon=True).start()
+        webview.start()
+    except Exception:  # noqa: BLE001 - e.g. WebView2 missing: fall back to the browser
+        WINDOW.clear()
+        return False
+    httpd.shutdown()
+    return True
+
+
 def main():
     port = int(os.environ.get('CLIPSAVER_PORT') or DEFAULT_PORT)
-    open_browser = not os.environ.get('CLIPSAVER_NO_BROWSER')
+    headless = bool(os.environ.get('CLIPSAVER_NO_BROWSER'))   # tests: server only
     if already_running(port):
-        if open_browser:
+        if not headless:
+            try:   # ask the running copy to show its window
+                req = urllib.request.Request(f'http://127.0.0.1:{port}/api/show', data=b'{}',
+                                             headers={'Content-Type': 'application/json'})
+                with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=2) as r:
+                    if json.load(r).get('window'):
+                        return
+            except Exception:  # noqa: BLE001
+                pass
             webbrowser.open(f'http://127.0.0.1:{port}/')
         return
     try:
         httpd = ThreadingHTTPServer(('127.0.0.1', port), Handler)
     except OSError:
         httpd = ThreadingHTTPServer(('127.0.0.1', 0), Handler)  # port taken: any free one
+    httpd.app_close = lambda: close_app(httpd)
     url = f'http://127.0.0.1:{httpd.server_address[1]}/'
     if sys.stdout:  # None inside a windowed (no console) build
         print(f'ClipSaver running at {url}', flush=True)
 
+    if not headless and not os.environ.get('CLIPSAVER_BROWSER') and run_window(url, httpd):
+        return   # window was closed
+
+    # Browser mode (fallback) or headless test mode.
     def idle_watch():
         while True:
             time.sleep(10)
@@ -213,7 +268,7 @@ def main():
                 return
     if not os.environ.get('CLIPSAVER_NO_IDLE_EXIT'):
         threading.Thread(target=idle_watch, daemon=True).start()
-    if open_browser:
+    if not headless:
         threading.Timer(0.3, webbrowser.open, args=(url,)).start()
     httpd.serve_forever()
 
