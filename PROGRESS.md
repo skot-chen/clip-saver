@@ -6,6 +6,11 @@
 - 11 offline tests + live smoke test; CI builds ClipSaver.app on macOS arm64 and live-tests it.
 - Release: https://github.com/skot-chen/clip-saver/releases/latest
 
+## Done (v0.2.0)
+- Ships as ClipSaver-macOS-arm64.dmg (CI checks and mounts it).
+- Homepage https://skot-chen.github.io/clip-saver/ from docs/ (screenshots use placeholder thumbnails/names).
+- Developer notes live here, not in README (user removed them there).
+
 ## Not verified yet
 - First-open on the user's Mac (Gatekeeper prompt), browser auto-open, "Show in Finder".
 
