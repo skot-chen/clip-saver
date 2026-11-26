@@ -11,8 +11,16 @@
 - Homepage https://skot-chen.github.io/clip-saver/ from docs/ (screenshots use placeholder thumbnails/names).
 - Developer notes live here, not in README (user removed them there).
 
+## Done (v0.3.0 – v0.4.0)
+- Windows build (single ClipSaver-Windows.exe); CI tests both builds, release only if both pass.
+- Native app window via pywebview (WebKit on Mac, WebView2 on Windows), browser fallback; second launch focuses the window; exit safety net 3 s after close.
+- New UI: dark, sidebar (Download / Settings / About) + work area; themes green (default) / purple / orange; Paste button reads the system clipboard.
+- No History/Queue/Saved pages on purpose: the user wants no stored data. Only theme + proxy are remembered (localStorage).
+- Homepage: click-to-zoom screenshots, OS-aware download buttons, Mac/Windows install tabs.
+
 ## Not verified yet
-- First-open on the user's Mac (Gatekeeper prompt), browser auto-open, "Show in Finder".
+- On the user's own Mac: Gatekeeper first open, how the window looks (CI only proves it opens/closes), "Show in Finder", Paste.
+- Icon: user was offered options A–D (X/Threads hint without their logos); shipped a rounder green download-arrow icon meanwhile.
 
 ## Decisions
 - No yt-dlp / Playwright: X syndication endpoint + Threads embed page are enough and keep the app ~8 MB.
