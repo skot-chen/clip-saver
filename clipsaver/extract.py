@@ -40,7 +40,7 @@ class Net:
         self.enabled, self.proxies, self.used = enabled, list(proxies or ()), None
 
 
-def fetch(netcfg, url, headers=None, timeout=20, body=True):
+def fetch(netcfg, url, headers=None, timeout=8, body=True):
     """GET a page. body=False only follows redirects and returns the final address
     (share links: no need to download the 600 KB page behind them)."""
     req = urllib.request.Request(url, headers={'User-Agent': UA, **(headers or {})})
@@ -284,14 +284,14 @@ def extract_threads(code, opener):
     except ExtractError:
         if not reader:
             raise
-        reader.join(30)                      # the quick way failed: the browser way may still work
+        reader.join(13)                      # the quick way failed: the browser way may still work (it gives up after 12 s)
         if not box.get('found'):
             raise
         result = {'site': 'threads', 'id': code, 'author': '', 'text': '', 'photos': 0, 'videos': []}
     if result['videos']:
         cancel.set()
     elif reader:
-        reader.join(30)
+        reader.join(13)
         result['videos'] = videos_from_browser(box.get('found') or [], code, result['author'])
         result['via_browser'] = bool(result['videos'])
     return result

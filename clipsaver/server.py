@@ -59,7 +59,7 @@ def run_download(job_id, url, stem, site, enabled, proxies, lang):
     part = target.with_suffix('.mp4.part')
     try:
         req = urllib.request.Request(url, headers={'User-Agent': extract.UA, 'Referer': referer})
-        resp, route = net.open_url(req, enabled, proxies, timeout=30)
+        resp, route = net.open_url(req, enabled, proxies, timeout=12)
         job['route'] = route.describe()
         with resp as r, open(part, 'wb') as f:
             total = int(r.headers.get('Content-Length') or 0)
@@ -106,6 +106,31 @@ def read_clipboard():
     except Exception:  # noqa: BLE001
         pass
     return ''
+
+
+_SYSLANG = []
+
+
+def system_language():
+    """'zh' if the computer's language is Chinese, else 'en' (used until the user picks one)."""
+    if _SYSLANG:
+        return _SYSLANG[0]
+    lang = ''
+    try:
+        if sys.platform == 'darwin':
+            out = subprocess.run(['defaults', 'read', '-g', 'AppleLanguages'], capture_output=True, timeout=3).stdout
+            lang = out.decode('utf-8', 'replace').replace('(', '').strip().strip('"').split('"')[0]
+        elif sys.platform.startswith('win'):
+            import ctypes
+            import locale
+            lang = locale.windows_locale.get(ctypes.windll.kernel32.GetUserDefaultUILanguage(), '')
+        if not lang:
+            import locale
+            lang = locale.getlocale()[0] or os.environ.get('LANG', '')
+    except Exception:  # noqa: BLE001
+        pass
+    _SYSLANG.append('zh' if str(lang).lower().startswith('zh') or 'chinese' in str(lang).lower() else 'en')
+    return _SYSLANG[0]
 
 
 def write_clipboard(text):
@@ -187,7 +212,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, (UI_FILE.parent / 'logo.png').read_bytes(), 'image/png')
         elif self.path == '/api/ping':
             self._send(200, {'app': 'clipsaver', 'folder': str(save_dir()), 'version': __version__,
-                             'window': bool(WINDOW), 'platform': sys.platform})
+                             'window': bool(WINDOW), 'platform': sys.platform, 'syslang': system_language()})
         elif self.path == '/api/clipboard':
             self._send(200, {'text': read_clipboard()})
         elif self.path.startswith('/api/job/'):
@@ -306,7 +331,7 @@ READ_LOCK = threading.Lock()
 READER = []   # one hidden window made at start-up and reused, so no start-up wait per search
 
 
-def read_with_browser(page_url, code, cancel=None, timeout=20):
+def read_with_browser(page_url, code, cancel=None, timeout=12):
     """Open the post in a hidden window (same engine and system proxy as a
     browser) and return its video addresses as soon as they appear."""
     import webview
@@ -353,10 +378,16 @@ def run_window(url, httpd):
                                        min_size=(760, 560), background_color='#0e1014')
         WINDOW.append(window)
         window.events.closed += lambda *a: exit_soon()
-        try:   # warm up the hidden reader now, not during the user's first search
-            READER.append(webview.create_window('ClipSaver reader', 'about:blank', hidden=True))
-        except Exception:  # noqa: BLE001 - read_with_browser then makes one when needed
-            READER.clear()
+        def warm_reader():
+            # Make the hidden reader once the main window is up (not during start-up,
+            # where it would slow the first window down).
+            time.sleep(1.5)
+            try:
+                if not READER:
+                    READER.append(webview.create_window('ClipSaver reader', 'about:blank', hidden=True))
+            except Exception:  # noqa: BLE001 - read_with_browser then makes one when needed
+                READER.clear()
+        window.events.loaded += lambda *a: threading.Thread(target=warm_reader, daemon=True).start()
         extract.browser_reader = read_with_browser
         threading.Thread(target=httpd.serve_forever, daemon=True).start()
         webview.start()

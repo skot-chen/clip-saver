@@ -836,7 +836,12 @@ async function downloadOne(d, row) {
 }
 
 /* ======================= start ======================= */
-LANG = load('lang') === 'en' ? 'en' : 'zh';
+// Language: the user's own choice if they made one, otherwise the computer's language.
+const savedLang = load('lang');
+LANG = savedLang === 'en' || savedLang === 'zh' ? savedLang : (/^zh/i.test(navigator.language || '') ? 'zh' : 'en');
+if (!savedLang) {
+  api('/api/ping').then((d) => { if (d.syslang && d.syslang !== LANG && !load('lang')) { LANG = d.syslang; applyLang(); } }).catch(() => {});
+}
 setTheme(load('accent') || 'orange');
 ping(); setInterval(ping, 20000);
 applyLang();

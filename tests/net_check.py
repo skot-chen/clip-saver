@@ -169,7 +169,10 @@ def c_first_proxy_dead_next_one_used():
 
 def d_wrong_type_is_corrected():
     os.environ['CLIPSAVER_BLOCK_DIRECT'] = '1'
-    r = extract.inspect(X_POST, True, [f'socks5://127.0.0.1:{HTTP_PORT}', f'127.0.0.1:{SOCKS_PORT}'])
+    typed = f'socks5://127.0.0.1:{HTTP_PORT}'
+    added = net.check(typed)                       # what "Add proxy" does: test + detect the real type
+    assert added['proxy'] == f'http://127.0.0.1:{HTTP_PORT}', added
+    r = extract.inspect(X_POST, True, [typed, f'127.0.0.1:{SOCKS_PORT}'])
     assert 'HTTP' in r['route'] and str(HTTP_PORT) in r['route'], r['route']
     return 'typed socks5 on an HTTP port -> ' + r['route']
 

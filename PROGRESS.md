@@ -52,3 +52,9 @@
 ## v0.7.1 (2026-11-26)
 - Browser-only Threads videos: ~12s -> ~3.5-4.5s. Share links follow redirect without downloading the page; embed and hidden-window read run in parallel (reader cancelled when embed has videos); reader window pre-created at start-up and reused (load_url); stops as soon as a video src appears (0.15s polling, no readyState/extra 1s wait). Normal posts 0.6-1.2s.
 - Sidebar network box hidden when Proxy is off (user: direct users do not need it).
+
+## v0.7.2 (2026-11-26)
+- Language: saved choice, else system language (/api/ping syslang: macOS AppleLanguages, Windows GetUserDefaultUILanguage).
+- Fail fast on blocked networks: per-step timeout 6s when several routes, fetch 8s, downloads 12s, hidden reader 12s; proxy type is detected only on add/test (known_type from cache per request) - silent proxy fallback 11.4s -> 6.4s.
+- Hidden reader window created 1.5s after main window loaded (not during start-up).
+- Windows start-up measured: first launch after download 12.6s (Defender scan, once per version), later 2.2s; folder build only 9.0/1.9s -> kept single exe, documented.

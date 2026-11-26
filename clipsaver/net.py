@@ -192,6 +192,15 @@ def fix_type(proxy):
     return f'{real}://{u.hostname}:{u.port}' if real and real != u.scheme else proxy
 
 
+def known_type(proxy):
+    """Like fix_type, but only uses what an earlier test already found out (no network)."""
+    if not proxy:
+        return proxy
+    u = urllib.parse.urlsplit(proxy)
+    real = _kind_cache.get((u.hostname, u.port))
+    return f'{real}://{u.hostname}:{u.port}' if real and real != u.scheme else proxy
+
+
 _lock = threading.Lock()
 _good = {}   # host -> route key that worked last time (memory only)
 
@@ -203,7 +212,7 @@ def routes(enabled, proxies):
     out, seen = [], set()
     if enabled:
         for p in proxies or ():
-            p = fix_type(parse_proxy(p))
+            p = known_type(parse_proxy(p))   # no probing here: it would slow every request down
             if p and p not in seen:
                 seen.add(p)
                 out.append(Route(p))
@@ -221,7 +230,7 @@ def _fresh(req):
                                   method=req.get_method())
 
 
-def open_url(req, enabled=False, proxies=(), timeout=20):
+def open_url(req, enabled=False, proxies=(), timeout=8):
     """Open a request, trying routes in turn. Returns (response, route).
 
     HTTP errors (404, 403…) from the website itself are raised unchanged.
@@ -238,7 +247,9 @@ def open_url(req, enabled=False, proxies=(), timeout=20):
         try:
             if not route.proxy and os.environ.get('CLIPSAVER_BLOCK_DIRECT'):
                 raise urllib.error.URLError('blocked (test)')   # tests: pretend the site is unreachable directly
-            resp = route.opener().open(_fresh(req), timeout=min(timeout, 12) if many else timeout)
+            # A blocked site usually hangs while connecting; give up on a route after
+            # `timeout` seconds of silence (it is a per-step limit, not a total).
+            resp = route.opener().open(_fresh(req), timeout=min(timeout, 6) if many else timeout)
         except urllib.error.HTTPError as e:
             if route.proxy and e.code in (407, 502, 503, 504):
                 tried.append((route, f'HTTP {e.code} from proxy'))
@@ -297,7 +308,7 @@ def friendly(detail):
 
 # ---------------------------------------------------------------- settings page
 
-def check(proxy, timeout=8):
+def check(proxy, timeout=6):
     """Test one proxy against X and Threads -> what the Settings row shows."""
     p = fix_type(parse_proxy(proxy))
     if not p:

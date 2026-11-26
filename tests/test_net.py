@@ -18,7 +18,7 @@ class ParseTest(unittest.TestCase):
 
 class RoutesTest(unittest.TestCase):
     def test_switch_and_order(self):
-        with mock.patch.object(net, 'fix_type', side_effect=lambda p: p):
+        with mock.patch.object(net, 'known_type', side_effect=lambda p: p):
             on = net.routes(True, ['127.0.0.1:7892', 'socks5://127.0.0.1:7890', '127.0.0.1:7892'])
             self.assertEqual([r.proxy for r in on],
                              ['http://127.0.0.1:7892', 'socks5://127.0.0.1:7890', None])   # list order, no repeats, direct last

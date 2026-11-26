@@ -30,7 +30,7 @@ A small Mac / Windows app for saving videos from **X (Twitter)** and **Threads**
 
 1. 下载 [ClipSaver-Windows.exe](https://github.com/skot-chen/clip-saver/releases/latest/download/ClipSaver-Windows.exe)。如果浏览器提示"不常下载"，点「…」→「保留」。
 2. 不用安装，这一个文件就是整个程序。放到桌面或任何文件夹都行。
-3. **第一次打开**：如果显示"Windows 已保护你的电脑"，点「更多信息」→「仍要运行」。以后就可以直接双击打开了。
+3. **第一次打开**：如果显示"Windows 已保护你的电脑"，点「更多信息」→「仍要运行」。以后就可以直接双击打开了。第一次打开要等 10 秒左右（Windows 在检查新程序），以后大约 2 秒。
 
 ## 使用
 
