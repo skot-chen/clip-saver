@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipSaver</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --card: #ffffff; --ink: #1d1d1f; --muted: #6e6e73; --line: #e3e1dc;
+    --accent: #1f6feb; --accent-ink: #fff; --ok: #1a7f37; --warn: #b35900; --bad: #c62828;
+    --chip-main: #e8f0fe; --chip-quote: #fff1e0; --chip-card: #f3e8ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #1f1f22; --ink: #f2f2f2; --muted: #a1a1a6; --line: #333338;
+      --accent: #4c8dff; --chip-main: #1d2a44; --chip-quote: #3d2a12; --chip-card: #2e2140;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 16px 60px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 20px; }
+  .en { color: var(--muted); font-size: 12px; font-weight: normal; }
+  .row { display: flex; gap: 8px; }
+  input[type=text] { flex: 1; min-width: 0; padding: 12px 14px; font-size: 15px; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--card); color: var(--ink); }
+  input[type=text]:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 10px; padding: 10px 16px; cursor: pointer; white-space: nowrap; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.link { border: none; background: none; color: var(--accent); padding: 4px 0; }
+  .msg { margin: 16px 0; padding: 12px 14px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); }
+  .msg.bad { border-color: var(--bad); color: var(--bad); }
+  .post { margin-top: 20px; }
+  .post-head { color: var(--muted); font-size: 13px; margin-bottom: 10px; overflow-wrap: anywhere; }
+  .video { display: grid; grid-template-columns: auto 120px 1fr; gap: 12px; align-items: center;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+  .video input[type=checkbox] { width: 20px; height: 20px; }
+  .thumb { width: 120px; height: 72px; border-radius: 8px; background: var(--line); object-fit: cover; display: block; }
+  .meta { min-width: 0; }
+  .chip { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 99px; margin-right: 6px; }
+  .chip.main { background: var(--chip-main); }
+  .chip.quote { background: var(--chip-quote); }
+  .chip.card { background: var(--chip-card); }
+  .facts { color: var(--muted); font-size: 13px; }
+  select { font: inherit; font-size: 13px; padding: 2px 4px; border-radius: 6px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink); max-width: 100%; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 6px; display: none; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .status { font-size: 13px; margin-top: 4px; }
+  .status.ok { color: var(--ok); } .status.bad { color: var(--bad); }
+  .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+  details { margin-top: 36px; color: var(--muted); font-size: 14px; }
+  details summary { cursor: pointer; }
+  details .box { margin-top: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  details label { display: block; margin-bottom: 6px; color: var(--ink); }
+  details input[type=text] { width: 100%; padding: 8px 10px; font-size: 14px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  @media (max-width: 520px) {
+    .row { flex-direction: column; }
+    .video { grid-template-columns: auto 1fr; }
+    .thumb { grid-column: 2; width: 100%; height: auto; aspect-ratio: 16/9; }
+    .meta { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>ClipSaver <span class="en">视频下载</span></h1>
+      <p class="sub">粘贴 X 或 Threads 的帖子链接 · Paste an X or Threads post link</p>
+    </div>
+    <button id="quit" title="退出程序 Quit">退出 Quit</button>
+  </header>
+
+  <form class="row" id="form">
+    <input type="text" id="url" placeholder="https://x.com/…/status/…  或  https://www.threads.com/@…/post/…" autocomplete="off" autofocus>
+    <button class="primary" id="find" type="submit">查找视频 Find</button>
+  </form>
+
+  <div id="out"></div>
+
+  <details id="settings">
+    <summary>设置 Settings</summary>
+    <div class="box">
+      <label for="proxy">代理 Proxy（可选，留空 = 直接连接）</label>
+      <input type="text" id="proxy" placeholder="例如 http://127.0.0.1:7897" autocomplete="off">
+      <div class="hint">只有直接连不上时才需要填。填了以后，查找和下载都会走这个代理。这个设置只记在本浏览器里。</div>
+      <div class="hint" id="folder"></div>
+    </div>
+  </details>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const out = $('#out');
+const proxyInput = $('#proxy');
+
+function store(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+proxyInput.value = load('proxy');
+if (proxyInput.value) $('#settings').open = true;
+proxyInput.addEventListener('change', () => store('proxy', proxyInput.value.trim() || null));
+
+async function api(path, body) {
+  const r = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
+  return r.json();
+}
+
+function ping() {
+  api('/api/ping').then((d) => { $('#folder').textContent = '保存位置 Save to：' + d.folder; }).catch(() => {});
+}
+ping(); setInterval(ping, 20000);
+
+$('#quit').onclick = async () => {
+  try { await api('/api/quit', {}); } catch (e) {}
+  document.body.innerHTML = '<main><h1>已退出 · Closed</h1><p class="sub">可以关掉这个页面了。下次双击 ClipSaver 再打开。</p></main>';
+};
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function fmtDur(s) { if (!s) return ''; s = Math.round(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function fmtSize(b) { return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+
+function chip(v) {
+  if (v.source === 'quote') return `<span class="chip quote">引用帖 @${esc(v.author)} · Quoted</span>`;
+  if (v.source === 'card') return `<span class="chip card">卡片/广告 · Card</span>`;
+  return `<span class="chip main">本帖 · This post</span>`;
+}
+
+function qualityLabel(q) {
+  const parts = [];
+  if (q.width && q.height) parts.push(`${q.width}×${q.height}`);
+  if (q.bitrate) parts.push(`${Math.round(q.bitrate / 1000)} kbps`);
+  return parts.join(' · ') || '原画 Original';
+}
+
+let current = null;
+
+$('#form').onsubmit = async (e) => {
+  e.preventDefault();
+  const url = $('#url').value.trim();
+  if (!url) return;
+  $('#find').disabled = true;
+  out.innerHTML = '<div class="msg">正在查找… Looking…</div>';
+  try {
+    const d = await api('/api/inspect', { url, proxy: proxyInput.value.trim() });
+    if (d.error) { out.innerHTML = `<div class="msg bad">${esc(d.error)}</div>`; return; }
+    current = d;
+    render(d);
+  } catch (err) {
+    out.innerHTML = '<div class="msg bad">程序没响应。请重新双击 ClipSaver 打开。</div>';
+  } finally {
+    $('#find').disabled = false;
+  }
+};
+
+function render(d) {
+  const hasMain = d.videos.some((v) => v.source === 'main');
+  const many = d.videos.length > 1;
+  const kinds = new Set(d.videos.map((v) => v.source));
+  let note = '';
+  if (kinds.size > 1) note = '这条帖子里的视频来自不同地方，已分开标出。默认只勾选本帖自己的视频。';
+  else if (!hasMain && kinds.has('quote')) note = '这条帖子本身没有视频，下面是它引用的那条帖子里的视频。';
+  else if (!hasMain && kinds.has('card')) note = '视频在帖子附带的卡片（常见于广告）里。';
+  const text = d.text ? ' · ' + esc(d.text.slice(0, 120)) + (d.text.length > 120 ? '…' : '') : '';
+  out.innerHTML = `
+    <section class="post">
+      <div class="post-head">@${esc(d.author)}${text}</div>
+      ${note ? `<div class="msg">${note}</div>` : ''}
+      <div class="post-head">找到 ${d.videos.length} 个视频 · ${d.videos.length} video${many ? 's' : ''} found</div>
+      ${d.videos.map((v, i) => `
+        <div class="video" data-i="${i}">
+          <input type="checkbox" ${v.source === 'main' || !hasMain ? 'checked' : ''} aria-label="选择第 ${i + 1} 个">
+          ${v.thumb ? `<img class="thumb" src="${esc(v.thumb)}" alt="" referrerpolicy="no-referrer">`
+                    : `<video class="thumb" src="${esc(v.variants[0].url)}#t=0.5" preload="metadata" muted playsinline></video>`}
+          <div class="meta">
+            <div>${chip(v)}<b>第 ${i + 1} 个</b>${v.kind === 'gif' ? ' <span class="chip">GIF</span>' : ''}</div>
+            <div class="facts">${[fmtDur(v.duration), v.width && v.height ? `${v.width}×${v.height}` : ''].filter(Boolean).join(' · ')}</div>
+            ${v.variants.length > 1 ? `<select aria-label="清晰度">${v.variants.map((q, k) => `<option value="${k}">${k === 0 ? '最高画质 · ' : ''}${qualityLabel(q)}</option>`).join('')}</select>` : ''}
+            <div class="bar"><i></i></div>
+            <div class="status"></div>
+          </div>
+        </div>`).join('')}
+      <div class="actions">
+        <button class="primary" id="dl">下载选中的 Download</button>
+        ${many ? '<button class="link" id="all">全选 Select all</button>' : ''}
+      </div>
+    </section>`;
+  out.querySelectorAll('video.thumb').forEach((el) => {
+    el.addEventListener('loadedmetadata', () => {
+      const row = el.closest('.video'); const v = current.videos[+row.dataset.i];
+      const facts = row.querySelector('.facts');
+      if (!v.duration) facts.textContent = [fmtDur(el.duration), `${el.videoWidth}×${el.videoHeight}`].join(' · ');
+    });
+  });
+  const all = $('#all');
+  if (all) all.onclick = () => out.querySelectorAll('.video input[type=checkbox]').forEach((c) => { c.checked = true; });
+  $('#dl').onclick = downloadSelected;
+}
+
+async function downloadSelected() {
+  const d = current;
+  const rows = [...out.querySelectorAll('.video')].filter((r) => r.querySelector('input').checked);
+  if (!rows.length) return;
+  $('#dl').disabled = true;
+  await Promise.all(rows.map((row) => downloadOne(d, row)));
+  $('#dl').disabled = false;
+}
+
+async function downloadOne(d, row) {
+  const i = +row.dataset.i;
+  const v = d.videos[i];
+  const sel = row.querySelector('select');
+  const q = v.variants[sel ? +sel.value : 0];
+  const bar = row.querySelector('.bar'); const fill = bar.querySelector('i');
+  const status = row.querySelector('.status');
+  const name = `${d.site}_${d.id}` + (d.videos.length > 1 ? `_${i + 1}` : '') + (v.source === 'quote' ? '_quoted' : '');
+  bar.style.display = 'block'; fill.style.width = '0'; status.className = 'status'; status.textContent = '开始下载… Starting…';
+  let job;
+  try {
+    job = (await api('/api/download', { url: q.url, name, site: d.site, proxy: proxyInput.value.trim() })).job;
+  } catch (e) { job = null; }
+  if (!job) { status.className = 'status bad'; status.textContent = '没能开始下载'; return; }
+  for (;;) {
+    await new Promise((r) => setTimeout(r, 400));
+    let s;
+    try { s = await api('/api/job/' + job); } catch (e) { status.className = 'status bad'; status.textContent = '程序没响应'; return; }
+    if (s.total) fill.style.width = Math.min(100, (s.done / s.total) * 100) + '%';
+    if (s.state === 'running') { status.textContent = `下载中 ${fmtSize(s.done)}${s.total ? ' / ' + fmtSize(s.total) : ''}`; continue; }
+    if (s.state === 'ok') {
+      fill.style.width = '100%';
+      status.className = 'status ok';
+      status.innerHTML = `✓ 已保存 Saved：${esc(s.name)} (${fmtSize(s.done)}) <button class="link">在文件夹中显示 Show</button>`;
+      status.querySelector('button').onclick = () => api('/api/reveal', { path: s.path });
+    } else {
+      bar.style.display = 'none';
+      status.className = 'status bad';
+      status.textContent = '✗ ' + s.error;
+    }
+    return;
+  }
+}
+</script>
+</body>
+</html>

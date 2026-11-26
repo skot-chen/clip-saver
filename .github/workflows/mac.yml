@@ -1,0 +1,63 @@
+name: Build Mac app
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    runs-on: macos-14   # Apple silicon (M1/M2/M3/M4)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests -t . -v
+
+      - name: Make icon
+        run: |
+          python tools/make_icon.py assets/icon.iconset
+          iconutil -c icns assets/icon.iconset -o assets/ClipSaver.icns
+
+      - name: Build ClipSaver.app
+        env:
+          APP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0' }}
+        run: |
+          pip install pyinstaller==6.11.1
+          pyinstaller --noconfirm ClipSaver.spec
+          ls -la dist
+
+      - name: Test the packaged app on this Mac (real downloads)
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          CLIPSAVER_NO_BROWSER=1 CLIPSAVER_DIR="$RUNNER_TEMP/out" \
+            dist/ClipSaver.app/Contents/MacOS/ClipSaver &
+          python tests/smoke_live.py http://127.0.0.1:8790 "$RUNNER_TEMP/out"
+          curl -s -X POST -d '{}' http://127.0.0.1:8790/api/quit
+
+      - name: Zip
+        run: |
+          cd dist
+          ditto -c -k --sequesterRsrc --keepParent ClipSaver.app ClipSaver-mac.zip
+          ls -la ClipSaver-mac.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ClipSaver-mac
+          path: dist/ClipSaver-mac.zip
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" dist/ClipSaver-mac.zip \
+            --title "ClipSaver ${{ github.ref_name }}" \
+            --notes-file RELEASE_NOTES.md
