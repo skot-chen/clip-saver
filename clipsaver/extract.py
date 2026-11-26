@@ -11,6 +11,7 @@ import html
 import json
 import math
 import re
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -39,13 +40,15 @@ class Net:
         self.enabled, self.proxies, self.used = enabled, list(proxies or ()), None
 
 
-def fetch(netcfg, url, headers=None, timeout=20):
+def fetch(netcfg, url, headers=None, timeout=20, body=True):
+    """GET a page. body=False only follows redirects and returns the final address
+    (share links: no need to download the 600 KB page behind them)."""
     req = urllib.request.Request(url, headers={'User-Agent': UA, **(headers or {})})
     try:
         resp, route = net.open_url(req, netcfg.enabled, netcfg.proxies, timeout)
         netcfg.used = route.describe()
         with resp as r:
-            return r.geturl(), r.read()
+            return r.geturl(), (r.read() if body else b'')
     except urllib.error.HTTPError as e:
         raise ExtractError(tr(f'网站返回错误 {e.code}（链接可能失效或帖子不公开）',
                               f'The site returned error {e.code} (the link may be broken or the post private)'),
@@ -238,12 +241,11 @@ def parse_threads_embed(page, code):
 # Set by the app when it runs with its own window: reads a post the way a
 # browser does (some videos, e.g. ones shared over from Instagram, are only
 # loaded by Threads' own scripts and are missing from the embed page).
-# Signature: browser_reader(page_url, code) -> [{'src', 'poster', 'w', 'h', 'd'}]
+# Signature: browser_reader(page_url, code, cancel: threading.Event) -> [{'src', 'poster', 'w', 'h', 'd'}]
 browser_reader = None
 
 
-def videos_from_browser(code, author):
-    found = browser_reader(f'https://www.threads.com/t/{code}', code) if browser_reader else []
+def videos_from_browser(found, code, author):
     videos, seen = [], set()
     for v in found:
         src = v.get('src') or ''
@@ -260,21 +262,43 @@ def videos_from_browser(code, author):
 
 
 def extract_threads(code, opener):
-    # A browser User-Agent gets the JS app; a plain one gets server-rendered HTML.
-    _, body = fetch(opener, f"https://www.threads.com/t/{code}/embed",
-                    headers={"User-Agent": "ClipSaver/1.0"})
-    page = body.decode('utf-8', 'replace')
-    if 'HeaderLink' not in page and '<video' not in page:
-        raise ExtractError(tr('这条 Threads 帖子看不到（可能已删除或不公开）', 'This Threads post cannot be seen (deleted or not public).'))
-    result = parse_threads_embed(page, code)
-    if not result['videos'] and browser_reader:
-        result['videos'] = videos_from_browser(code, result['author'])
+    # The quick way (embed page) and the browser way run at the same time; the
+    # browser one is stopped as soon as the quick way has found the videos.
+    reader, cancel, box = None, threading.Event(), {}
+    if browser_reader:
+        def run():
+            try:
+                box['found'] = browser_reader(f'https://www.threads.com/t/{code}', code, cancel)
+            except Exception as e:  # noqa: BLE001
+                box['error'] = e
+        reader = threading.Thread(target=run, daemon=True)
+        reader.start()
+    try:
+        # A browser User-Agent gets the JS app; a plain one gets server-rendered HTML.
+        _, body = fetch(opener, f"https://www.threads.com/t/{code}/embed",
+                        headers={"User-Agent": "ClipSaver/1.0"})
+        page = body.decode('utf-8', 'replace')
+        if 'HeaderLink' not in page and '<video' not in page:
+            raise ExtractError(tr('这条 Threads 帖子看不到（可能已删除或不公开）', 'This Threads post cannot be seen (deleted or not public).'))
+        result = parse_threads_embed(page, code)
+    except ExtractError:
+        if not reader:
+            raise
+        reader.join(30)                      # the quick way failed: the browser way may still work
+        if not box.get('found'):
+            raise
+        result = {'site': 'threads', 'id': code, 'author': '', 'text': '', 'photos': 0, 'videos': []}
+    if result['videos']:
+        cancel.set()
+    elif reader:
+        reader.join(30)
+        result['videos'] = videos_from_browser(box.get('found') or [], code, result['author'])
         result['via_browser'] = bool(result['videos'])
     return result
 
 
 def resolve_share(url, opener):
-    final, _ = fetch(opener, url, headers={"User-Agent": "ClipSaver/1.0"})
+    final, _ = fetch(opener, url, headers={"User-Agent": "ClipSaver/1.0"}, body=False)
     m = THREADS_RE.search(final)
     if not m:
         raise ExtractError(tr('这个分享链接没有跳转到具体帖子', 'This share link does not lead to a post.'))

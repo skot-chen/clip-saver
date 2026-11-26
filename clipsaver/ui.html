@@ -397,7 +397,7 @@ const T = {
     emptyTitle: '还没有链接', emptySites: 'x.com · twitter.com · threads.com · threads.net，分享链接也可以',
     legMain: '本帖', legMainD: '帖子自己的视频', legQuote: '引用帖', legQuoteD: '被引用的帖子里的', legCard: '卡片', legCardD: '藏在卡片 / 广告里的',
     looking: '正在查找…',
-    slow: '还在找… 有些视频（比如从 Instagram 分享到 Threads 的）要像浏览器一样打开帖子才能读到，需要多等 10 秒左右。',
+    slow: '还在找… 有些视频（比如从 Instagram 分享到 Threads 的）要像浏览器一样打开帖子才能读到，会多花几秒。',
     clipEmpty: '剪贴板里没有链接。先在 X 或 Threads 里复制帖子链接，再点「粘贴链接」。',
     noResponse: '程序没响应，请重新打开 ClipSaver。',
     copyErr: '复制错误信息', copied: '已复制 ✓', techInfo: '技术信息（发给别人帮你看时用）', openNet: '打开网络设置',
@@ -436,7 +436,7 @@ const T = {
     emptyTitle: 'No link yet', emptySites: 'x.com · twitter.com · threads.com · threads.net — share links work too',
     legMain: 'This post', legMainD: 'the post’s own video', legQuote: 'Quoted', legQuoteD: 'inside the quoted post', legCard: 'Card', legCardD: 'hidden in a card or ad',
     looking: 'Looking…',
-    slow: 'Still looking… Some videos (e.g. shared from Instagram to Threads) can only be read by opening the post like a browser does — about 10 more seconds.',
+    slow: 'Still looking… Some videos (e.g. shared from Instagram to Threads) can only be read by opening the post like a browser does — a few more seconds.',
     clipEmpty: 'There is no link on the clipboard. Copy a post link in X or Threads first, then click “Paste link”.',
     noResponse: 'ClipSaver is not responding. Please reopen it.',
     copyErr: 'Copy error details', copied: 'Copied ✓', techInfo: 'Technical details (for whoever helps you)', openNet: 'Open network settings',
@@ -533,6 +533,7 @@ function saveProxies() { store('proxies', myProxies.length ? JSON.stringify(myPr
 const addrOf = (p) => p.replace(/^[a-z0-9]+:\/\//i, '').toLowerCase();
 
 function renderSwitch() {
+  $('#statusbox').hidden = !proxyOn;          // direct connection: nothing to show
   $('#proxyswitch').setAttribute('aria-checked', String(proxyOn));
   $('#switchnote').textContent = proxyOn ? t('switchOn') : t('switchOff');
   $('#net').textContent = proxyOn ? t('netProxy') : t('netDirect');
@@ -687,7 +688,7 @@ async function find() {
   $('#dock').hidden = true;
   current = null;
   out.innerHTML = `<div class="msg">${icon('search')}<div class="body" id="lookmsg">${t('looking')}</div></div>`;
-  const slow = setTimeout(() => { const m = $('#lookmsg'); if (m) m.textContent = t('slow'); }, 4000);
+  const slow = setTimeout(() => { const m = $('#lookmsg'); if (m) m.textContent = t('slow'); }, 2500);
   try {
     const d = await api('/api/inspect', { url, ...netPayload() });
     clearTimeout(slow);

@@ -297,44 +297,46 @@ READ_JS = r"""
   // the main post = the first block that links to this post's own code
   const main = boxes.find((b) => b.querySelector('a[href*="/post/' + code + '"]')) || boxes[0];
   const vids = main ? [...main.querySelectorAll('video')] : [];
-  return JSON.stringify({ready: document.readyState, vids: vids.map((v) => ({
+  return JSON.stringify({here: location.href.includes(code), ready: document.readyState, vids: vids.map((v) => ({
     src: v.currentSrc || v.src || '', poster: v.poster || '',
     w: v.videoWidth || 0, h: v.videoHeight || 0, d: isFinite(v.duration) ? v.duration : 0}))});
 })()
 """
 READ_LOCK = threading.Lock()
+READER = []   # one hidden window made at start-up and reused, so no start-up wait per search
 
 
-def read_with_browser(page_url, code, timeout=20):
+def read_with_browser(page_url, code, cancel=None, timeout=20):
     """Open the post in a hidden window (same engine and system proxy as a
-    browser), wait for its video to load, and return the video addresses."""
+    browser) and return its video addresses as soon as they appear."""
     import webview
-    with READ_LOCK:   # one hidden window at a time
-        w = webview.create_window('ClipSaver reader', page_url, hidden=True)
+    with READ_LOCK:   # one hidden page at a time
+        reuse = bool(READER)
+        if reuse:
+            w = READER[0]
+            w.load_url(page_url)
+        else:
+            w = webview.create_window('ClipSaver reader', page_url, hidden=True)
         best = []
         try:
             end = time.time() + timeout
-            while time.time() < end:
-                time.sleep(0.5)
+            while time.time() < end and not (cancel and cancel.is_set()):
+                time.sleep(0.15)
                 try:
                     r = json.loads(w.evaluate_js(READ_JS % json.dumps(code)) or '{}')
                 except Exception:  # noqa: BLE001 - page still loading
                     continue
-                vids = [v for v in r.get('vids', []) if v.get('src', '').startswith('https://')]
-                if vids:
-                    best = vids
-                    if r.get('ready') == 'complete':
-                        time.sleep(1.0)    # let other videos of a carousel appear too
-                        try:
-                            r = json.loads(w.evaluate_js(READ_JS % json.dumps(code)) or '{}')
-                            more = [v for v in r.get('vids', []) if v.get('src', '').startswith('https://')]
-                            best = more if len(more) > len(best) else best
-                        except Exception:  # noqa: BLE001
-                            pass
-                        break
+                if not r.get('here'):
+                    continue          # still showing the previous page
+                best = [v for v in r.get('vids', []) if v.get('src', '').startswith('https://')]
+                if best:
+                    break             # found: no extra waiting
         finally:
             try:
-                w.destroy()
+                if reuse:
+                    w.load_url('about:blank')   # stop the page (and its video) in the background
+                else:
+                    w.destroy()
             except Exception:  # noqa: BLE001
                 pass
         return best
@@ -351,6 +353,10 @@ def run_window(url, httpd):
                                        min_size=(760, 560), background_color='#0e1014')
         WINDOW.append(window)
         window.events.closed += lambda *a: exit_soon()
+        try:   # warm up the hidden reader now, not during the user's first search
+            READER.append(webview.create_window('ClipSaver reader', 'about:blank', hidden=True))
+        except Exception:  # noqa: BLE001 - read_with_browser then makes one when needed
+            READER.clear()
         extract.browser_reader = read_with_browser
         threading.Thread(target=httpd.serve_forever, daemon=True).start()
         webview.start()
