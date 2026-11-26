@@ -16,7 +16,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import extract
+from . import __version__, extract
 
 HERE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent.parent))
 UI_FILE = HERE / 'clipsaver' / 'ui.html'
@@ -85,6 +85,31 @@ def run_download(job_id, url, stem, site, proxy):
         job.update(state='error', error=msg)
 
 
+def read_clipboard():
+    """Text on the system clipboard (used by the Paste button)."""
+    try:
+        if sys.platform == 'darwin':
+            out = subprocess.run(['pbpaste'], capture_output=True, timeout=5).stdout
+            return out.decode('utf-8', 'replace').strip()
+        if sys.platform.startswith('win'):
+            out = subprocess.run(['powershell', '-NoProfile', '-Command',
+                                  '[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-Clipboard -Raw'],
+                                 capture_output=True, timeout=8, creationflags=0x08000000)  # no console flash
+            return out.stdout.decode('utf-8', 'replace').strip()
+    except Exception:  # noqa: BLE001
+        pass
+    return ''
+
+
+def open_folder(path):
+    if sys.platform == 'darwin':
+        subprocess.Popen(['open', path])
+    elif sys.platform.startswith('win'):
+        os.startfile(path)  # noqa: S606
+    else:
+        subprocess.Popen(['xdg-open', path])
+
+
 def reveal(path):
     if sys.platform == 'darwin':
         subprocess.Popen(['open', '-R', path])
@@ -135,7 +160,10 @@ class Handler(BaseHTTPRequestHandler):
         if self.path in ('/', '/index.html'):
             self._send(200, UI_FILE.read_bytes(), 'text/html; charset=utf-8')
         elif self.path == '/api/ping':
-            self._send(200, {'app': 'clipsaver', 'folder': str(save_dir())})
+            self._send(200, {'app': 'clipsaver', 'folder': str(save_dir()), 'version': __version__,
+                             'window': bool(WINDOW), 'platform': sys.platform})
+        elif self.path == '/api/clipboard':
+            self._send(200, {'text': read_clipboard()})
         elif self.path.startswith('/api/job/'):
             job = JOBS.get(self.path.rsplit('/', 1)[-1])
             self._send(200 if job else 404, job or {'error': 'no such job'})
@@ -172,6 +200,9 @@ class Handler(BaseHTTPRequestHandler):
             path = data.get('path') or ''
             if path and Path(path).exists() and Path(path).parent == save_dir():
                 reveal(path)
+            self._send(200, {'ok': True})
+        elif self.path == '/api/open-folder':
+            open_folder(str(save_dir()))
             self._send(200, {'ok': True})
         elif self.path == '/api/quit':
             self._send(200, {'ok': True})
@@ -227,8 +258,8 @@ def run_window(url, httpd):
     except Exception:  # noqa: BLE001
         return False
     try:
-        window = webview.create_window('ClipSaver', url, width=880, height=780,
-                                       min_size=(420, 520), background_color='#f6f5f2')
+        window = webview.create_window('ClipSaver', url, width=1120, height=780,
+                                       min_size=(760, 560), background_color='#0e1014')
         WINDOW.append(window)
         window.events.closed += lambda *a: exit_soon()
         threading.Thread(target=httpd.serve_forever, daemon=True).start()

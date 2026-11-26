@@ -1,4 +1,4 @@
-"""Draw the app icon (blue rounded square + white play-and-download mark) as a macOS iconset.
+"""Draw the app icon (green rounded square + white download arrow) as a macOS iconset or Windows .ico.
 
     python tools/make_icon.py assets/icon.iconset   # Mac, then: iconutil -c icns ...
     python tools/make_icon.py assets/ClipSaver.ico   # Windows
@@ -39,21 +39,24 @@ def in_triangle(x, y, a, b, c):
     return not ((d1 < 0 or d2 < 0 or d3 < 0) and (d1 > 0 or d2 > 0 or d3 > 0))
 
 
+def seg_dist(x, y, ax, ay, bx, by):
+    dx, dy = bx - ax, by - ay
+    t = max(0.0, min(1.0, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)))
+    return ((x - ax - t * dx) ** 2 + (y - ay - t * dy) ** 2) ** 0.5
+
+
 def pixel(x, y, px):
-    # background: rounded square, macOS-style margin
-    d = rounded_box(x, y, 0.5, 0.5, 0.41, 0.41, 0.09)
+    # background: very rounded square (matches the app's sidebar logo), green
+    d = rounded_box(x, y, 0.5, 0.5, 0.41, 0.41, 0.18)
     alpha = clamp(0.5 - d / px)
     if alpha <= 0:
         return (0, 0, 0, 0)
-    t = y
-    r, g, b = 0.12 + 0.10 * t, 0.43 - 0.12 * t, 0.92 - 0.10 * t
-    white = 0.0
-    # play triangle
-    if in_triangle(x, y, (0.40, 0.27), (0.40, 0.55), (0.63, 0.41)):
-        white = 1.0
-    # download bar
-    if rounded_box(x, y, 0.5, 0.70, 0.17, 0.035, 0.035) < 0:
-        white = 1.0
+    r, g, b = 0x22 / 255, 0xc5 / 255, 0x5e / 255
+    # white download arrow: stem, chevron, tray line (round-capped strokes)
+    w = 0.045
+    strokes = [(0.5, 0.26, 0.5, 0.58), (0.36, 0.45, 0.5, 0.59), (0.64, 0.45, 0.5, 0.59), (0.31, 0.73, 0.69, 0.73)]
+    dist = min(seg_dist(x, y, *s) for s in strokes) - w
+    white = clamp(0.5 - dist / px)
     r, g, b = (r + (1 - r) * white, g + (1 - g) * white, b + (1 - b) * white)
     return (int(r * 255), int(g * 255), int(b * 255), int(alpha * 255))
 
