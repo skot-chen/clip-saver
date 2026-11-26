@@ -38,13 +38,3 @@ A small Mac app for saving videos from **X (Twitter)** and **Threads** posts.
 | 没有能下载的视频 | 帖子里只有图片，或者是直播、YouTube 这类外链视频，下载不了。 |
 | 看不到这条推文/帖子 | 帖子被删了、账号上了锁，或者要登录才能看。 |
 | 视频地址过期了 | 页面放了太久。重新点「查找视频」再下载。 |
-
-## For developers
-
-Python standard library only. `python main.py` runs it on any OS (opens the browser at `http://127.0.0.1:8790`).
-
-- `clipsaver/extract.py` – finds videos. X: the public syndication endpoint (`cdn.syndication.twimg.com/tweet-result`), which also exposes quoted-tweet and card media. Threads: the public embed page (`threads.com/t/<code>/embed`), which only contains the post itself (no replies/recommendations); a non-browser User-Agent is required to get the server-rendered HTML.
-- `clipsaver/server.py` – local HTTP server + download jobs (memory only).
-- `clipsaver/ui.html` – the page.
-- Tests: `python -m unittest discover -s tests -t .` (offline, saved real responses) and `python tests/smoke_live.py <base-url> <folder>` (live).
-- Release: push a tag `v*` → GitHub Actions builds `ClipSaver.app` on macOS, runs the live test against the packaged app, and attaches `ClipSaver-mac.zip` to the release.
