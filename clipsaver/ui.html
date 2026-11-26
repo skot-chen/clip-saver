@@ -161,6 +161,31 @@
   .field input { flex: 1; min-width: 0; background: var(--bg); border: 1.5px solid var(--line-2); border-radius: var(--r-md); padding: 10px 14px; outline: 0; }
   .field input:focus { border-color: var(--accent-line); }
   .hint { font-size: 12.5px; color: var(--faint); margin-top: 8px; }
+  /* network: proxy switch + list (like an iOS settings group) */
+  .group { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; margin-top: 12px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); min-height: 54px; }
+  .row:first-child { border-top: 0; }
+  .row .t { flex: 1; min-width: 0; }
+  .row .t b { display: block; font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
+  .row .t b .port { color: var(--muted); font-weight: 500; }
+  .row .t small { display: block; font-size: 12.5px; color: var(--muted); }
+  .row .t small.ok { color: var(--ok); } .row .t small.bad { color: var(--bad); }
+  .tag { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--bg); color: var(--muted); border: 1px solid var(--line-2); margin-left: 6px; vertical-align: 1px; }
+  .switch { width: 50px; height: 30px; border-radius: 99px; border: 0; background: var(--line-2); position: relative; flex: none; padding: 0; transition: background .15s; }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .switch[aria-checked="true"] { background: var(--accent); }
+  .switch[aria-checked="true"]::after { transform: translateX(20px); }
+  .switch:focus-visible, .icon-btn:focus-visible, .addbtn:focus-visible { outline: 3px solid var(--accent-line); outline-offset: 2px; }
+  .icon-btn { width: 34px; height: 34px; border-radius: 10px; border: 0; background: none; color: var(--muted); display: grid; place-items: center; flex: none; }
+  .icon-btn:hover { background: var(--panel); color: var(--bad); }
+  .addbtn { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; color: var(--accent); font-weight: 600; padding: 14px; text-align: left; }
+  .addrow { display: flex; gap: 8px; padding: 0 14px 14px; flex-wrap: wrap; }
+  .addrow input { flex: 1; min-width: 180px; background: var(--bg); border: 1.5px solid var(--line-2); border-radius: var(--r-sm); padding: 9px 12px; outline: 0; }
+  .addrow input:focus { border-color: var(--accent-line); }
+  .adderr { width: 100%; font-size: 12.5px; color: var(--bad); }
+  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--line-2); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -1px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .muted-box { font-size: 12.5px; color: var(--faint); margin-top: 10px; line-height: 1.6; }
   .labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .labels div { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; font-size: 13.5px; color: var(--muted); }
   .labels .chip { position: static; display: inline-block; margin-bottom: 6px; }
@@ -208,6 +233,8 @@
   <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.5 7.5A2 2 0 0 1 5.5 5.5h4l2 2.5h7a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></symbol>
   <symbol id="i-film" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="m10.5 9.5 4 2.5-4 2.5z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/></symbol>
 </svg>
 
@@ -223,7 +250,7 @@
     <div class="spacer"></div>
     <div class="status">
       <svg class="i"><use href="#i-shield"/></svg>
-      <div><b id="net">直接连接</b><span>X · Threads · 不留记录</span></div>
+      <div><b id="net">自动联网</b><span id="netsub">和浏览器一样，自动找代理</span></div>
     </div>
     <div class="side-foot">
       <div class="dots" role="group" aria-label="配色 Color">
@@ -288,10 +315,31 @@
         </div>
       </div>
       <div class="card">
-        <h2>代理 <span class="en">Proxy</span></h2>
-        <p>可选。留空就是直接连接。只有连不上 X 或 Threads 时才需要填。</p>
-        <div class="field"><input type="text" id="proxy" placeholder="例如 http://127.0.0.1:端口号" autocomplete="off" spellcheck="false"></div>
-        <div class="hint">填了以后，查找和下载都会走这个代理。</div>
+        <h2>网络 <span class="en">Network</span></h2>
+        <p>和 Chrome 一样：会自动用 Clash、V2Ray、Shadowsocks 这些代理软件；不需要代理的网络会直接连接。一般不用改。</p>
+
+        <div class="group">
+          <div class="row">
+            <div class="t"><b>代理 Proxy</b><small id="switchnote">开着：先走下面能用的代理，都不行再直接连接</small></div>
+            <button class="switch" id="proxyswitch" type="button" role="switch" aria-checked="true" aria-label="使用代理"></button>
+          </div>
+          <div class="row" id="lastrow" hidden>
+            <div class="t"><small>上一次成功走的</small><b id="lastroute"></b></div>
+          </div>
+        </div>
+
+        <div class="group" id="plist">
+          <button class="addbtn" id="addbtn" type="button"><svg class="i"><use href="#i-plus"/></svg>新增代理 Add proxy</button>
+          <div class="addrow" id="addrow" hidden>
+            <input type="text" id="newproxy" placeholder="127.0.0.1:7890 或 socks5://127.0.0.1:7891" autocomplete="off" spellcheck="false">
+            <button class="btn primary" id="addok" type="button">添加</button>
+            <button class="btn" id="addcancel" type="button">取消</button>
+            <div class="adderr" id="adderr"></div>
+          </div>
+          <div id="rows"></div>
+        </div>
+        <div class="muted-box">「系统」= 代理软件打开了"系统代理"；「本机」= 在这台电脑上找到的代理软件端口；「手动」= 你自己加的。HTTP 和 SOCKS5 都可以。设置只记在这台电脑上。</div>
+        <button class="btn" id="redetect" type="button" style="margin-top:12px"><svg class="i"><use href="#i-search"/></svg>重新检测 Check again</button>
       </div>
       <div class="card">
         <h2>保存位置 <span class="en">Save to</span></h2>
@@ -315,7 +363,7 @@
       </div>
       <div class="card">
         <h2>下载不了？</h2>
-        <p><b>连不上网站</b>：在「设置」里填代理。<br><b>没有能下载的视频</b>：帖子只有图片，或是直播、YouTube 外链。<br><b>看不到这条帖子</b>：已删除、账号上锁，或要登录才能看。<br><b>视频地址过期了</b>：重新点「查找」再下载。</p>
+        <p><b>连不上网站</b>：确认代理软件开着，在「设置 → 网络」里看哪条线路可用，没找到就「新增代理」。<br><b>没有能下载的视频</b>：帖子只有图片，或是直播、YouTube 外链。<br><b>看不到这条帖子</b>：已删除、账号上锁，或要登录才能看。<br><b>视频地址过期了</b>：重新点「查找」再下载。</p>
         <p class="hint" id="ver2"></p>
       </div>
     </section>
@@ -326,7 +374,6 @@
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const out = $('#out');
-const proxyInput = $('#proxy');
 const icon = (id) => `<svg class="i"><use href="#i-${id}"/></svg>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function store(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
@@ -360,11 +407,90 @@ function show(view) {
 }
 $$('.nav').forEach((n) => n.addEventListener('click', () => show(n.dataset.view)));
 
-/* ---------- proxy + status ---------- */
-proxyInput.value = load('proxy');
-function updateNet() { $('#net').textContent = proxyInput.value.trim() ? '使用代理' : '直接连接'; }
-proxyInput.addEventListener('input', () => { store('proxy', proxyInput.value.trim() || null); updateNet(); });
-updateNet();
+/* ---------- network: proxy switch + list ---------- */
+let proxyOn = load('proxyOn') !== 'off';            // on unless the user turned it off
+let myProxies = [];
+try { myProxies = JSON.parse(load('proxies') || '[]').filter((p) => typeof p === 'string'); } catch (e) { myProxies = []; }
+if (!myProxies.length && load('proxy')) { myProxies = [load('proxy')]; store('proxies', JSON.stringify(myProxies)); }   // from v0.5 and older
+store('proxy', null);
+function netPayload() { return { net: { on: proxyOn, proxies: myProxies } }; }
+function saveProxies() { store('proxies', myProxies.length ? JSON.stringify(myProxies) : null); }
+
+function renderSwitch() {
+  $('#proxyswitch').setAttribute('aria-checked', String(proxyOn));
+  $('#switchnote').textContent = proxyOn ? '开着：先走下面能用的代理，都不行再直接连接' : '关着：只直接连接，不用任何代理';
+  $('#plist').style.opacity = proxyOn ? '1' : '.5';
+  $('#net').textContent = proxyOn ? '自动联网' : '直接连接';
+  $('#netsub').textContent = proxyOn ? '和浏览器一样，自动用代理' : '代理已关闭';
+}
+$('#proxyswitch').onclick = () => { proxyOn = !proxyOn; store('proxyOn', proxyOn ? null : 'off'); renderSwitch(); checkNet(); };
+renderSwitch();
+function showRoute(route) { if (route) $('#netsub').textContent = '这次走的：' + route.replace(/（.*$/, ''); }
+
+const KIND = { system: '系统', local: '本机', manual: '手动', direct: '' };
+function rowHtml(r, i) {
+  const addr = r.address ? r.address.replace(/:(\d+)$/, '<span class="port">:$1</span>') : '直接连接';
+  const tags = (r.kind !== 'direct' ? `<span class="tag">${KIND[r.kind]}</span>` : '') + (r.type ? `<span class="tag">${r.type}</span>` : '');
+  const sub = r.checking ? '<span class="spin"></span> 检测中…'
+    : r.ok ? `可用 · ${r.ms} ms${r.label ? ' · ' + esc(r.label) : ''}`
+    : `${r.type ? r.type.toLowerCase() + '：' : ''}无法使用${r.error ? '（' + esc(r.error) + '）' : ''}`;
+  const del = r.kind === 'manual'
+    ? `<button class="icon-btn" type="button" data-del="${esc(r.proxy)}" aria-label="删除 ${esc(r.address)}" title="删除">${icon('trash')}</button>` : '';
+  return `<div class="row"><div class="t"><b>${addr}${tags}</b><small class="${r.checking ? '' : r.ok ? 'ok' : 'bad'}">${sub}</small></div>${del}</div>`;
+}
+function renderRows(list, checking) {
+  const rows = $('#rows');
+  rows.innerHTML = list.map(rowHtml).join('')
+    + (checking ? '<div class="row"><div class="t"><small><span class="spin"></span> 正在找本机的代理软件、测试能不能用…</small></div></div>' : '');
+  $$('[data-del]', rows).forEach((b) => b.onclick = () => {
+    const addr = b.dataset.del.split('://')[1];          // type may have been auto-corrected
+    myProxies = myProxies.filter((x) => normProxy(x).split('://')[1] !== addr);
+    saveProxies();
+    checkNet();
+  });
+}
+function normProxy(v) {
+  v = v.trim();
+  if (!v.includes('://')) v = 'http://' + v;
+  return v.replace(/^socks5h:|^socks:/i, 'socks5:').replace(/^https:/i, 'http:').toLowerCase();
+}
+let checkSeq = 0;
+async function checkNet() {
+  const seq = ++checkSeq;
+  renderRows(myProxies.map((p) => ({ kind: 'manual', proxy: normProxy(p), address: normProxy(p).split('://')[1], type: /^socks/i.test(normProxy(p)) ? 'SOCKS5' : 'HTTP', checking: true })), true);
+  try {
+    const d = await api('/api/net', netPayload());
+    if (seq !== checkSeq) return;
+    renderRows(d.routes);
+    $('#lastrow').hidden = !d.last;
+    $('#lastroute').textContent = d.last || '';
+  } catch (e) { if (seq === checkSeq) $('#rows').innerHTML = '<div class="row"><div class="t"><small class="bad">检测失败</small></div></div>'; }
+}
+$('#redetect').onclick = checkNet;
+$$('.nav').forEach((n) => n.addEventListener('click', () => { if (n.dataset.view === 'settings') checkNet(); }));
+
+$('#addbtn').onclick = () => { $('#addrow').hidden = false; $('#adderr').textContent = ''; $('#newproxy').focus(); };
+$('#addcancel').onclick = () => { $('#addrow').hidden = true; $('#newproxy').value = ''; };
+async function addProxy() {
+  const v = $('#newproxy').value.trim();
+  if (!v) { $('#adderr').textContent = '先填代理地址，例如 127.0.0.1:7890'; return; }
+  $('#addok').disabled = true;
+  $('#adderr').textContent = '';
+  try {
+    const d = await api('/api/check-proxy', { proxy: v });
+    if (!d.proxy) { $('#adderr').textContent = d.error; return; }
+    const addr = d.proxy.split('://')[1];
+    myProxies = myProxies.filter((x) => normProxy(x).split('://')[1] !== addr);
+    myProxies.unshift(d.proxy);
+    saveProxies();
+    $('#newproxy').value = '';
+    $('#addrow').hidden = true;
+    checkNet();
+  } finally { $('#addok').disabled = false; }
+}
+$('#addok').onclick = addProxy;
+$('#newproxy').addEventListener('keydown', (e) => { if (e.key === 'Enter') addProxy(); if (e.key === 'Escape') $('#addcancel').click(); });
+$('#newproxy').addEventListener('input', () => { $('#adderr').textContent = ''; });
 
 let folder = '';
 function ping() {
@@ -409,13 +535,20 @@ async function find() {
   if (!url) { $('#url').focus(); return; }
   $('#find').disabled = $('#paste').disabled = true;
   $('#dock').hidden = true;
-  out.innerHTML = `<div class="msg">${icon('search')}<div>正在查找… Looking…</div></div>`;
+  out.innerHTML = `<div class="msg">${icon('search')}<div id="lookmsg">正在查找… Looking…</div></div>`;
+  const slow = setTimeout(() => {
+    const m = $('#lookmsg');
+    if (m) m.innerHTML = '还在找… 有些视频（比如从 Instagram 分享到 Threads 的）要像浏览器一样打开帖子才能读到，需要多等 10 秒左右。<br>如果一直不行，看看左边「设置 → 网络」里有没有能用的线路。';
+  }, 4000);
   try {
-    const d = await api('/api/inspect', { url, proxy: proxyInput.value.trim() });
+    const d = await api('/api/inspect', { url, ...netPayload() });
+    clearTimeout(slow);
     if (d.error) { showMsg(d.error, true); return; }
+    showRoute(d.route);
     current = d;
     render(d);
   } catch (err) {
+    clearTimeout(slow);
     showMsg('程序没响应，请重新打开 ClipSaver。', true);
   } finally {
     $('#find').disabled = $('#paste').disabled = false;
@@ -529,7 +662,7 @@ async function downloadOne(d, row) {
   const name = `${d.site}_${d.id}` + (d.videos.length > 1 ? `_${i + 1}` : '') + (v.source === 'quote' ? '_quoted' : '');
   bar.hidden = false; fill.style.width = '0'; state.className = 'state'; state.textContent = '开始下载…';
   let job;
-  try { job = (await api('/api/download', { url: q.url, name, site: d.site, proxy: proxyInput.value.trim() })).job; } catch (e) { job = null; }
+  try { job = (await api('/api/download', { url: q.url, name, site: d.site, ...netPayload() })).job; } catch (e) { job = null; }
   if (!job) { state.className = 'state bad'; state.textContent = '没能开始下载'; return false; }
   for (;;) {
     await new Promise((r) => setTimeout(r, 400));

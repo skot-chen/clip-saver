@@ -21,6 +21,9 @@ jobs:
       - name: Unit tests
         run: python -m unittest discover -s tests -t . -v
 
+      - name: Network routes (system proxy, HTTP/SOCKS5 ports, fallbacks)
+        run: python tests/net_check.py
+
       - name: Build ClipSaver.app
         env:
           APP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'v0.0.0' }}
@@ -73,6 +76,9 @@ jobs:
 
       - name: Unit tests
         run: python -m unittest discover -s tests -t . -v
+
+      - name: Network routes (system proxy, HTTP/SOCKS5 ports, fallbacks)
+        run: python tests/net_check.py
 
       - name: Build ClipSaver.exe
         run: |

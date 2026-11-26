@@ -35,3 +35,9 @@
 - Icon = the user's own logo design (art/logo-design.png): dark tile, white X + loop, thicker coral arrow. Rebuild with tools/build_icon.py (needs Pillow; art/ files are committed, CI uses them).
 - Default theme coral #ff7a45 (key "accent"; only explicit choices saved). Quote label now light blue so it differs from coral.
 - tools/make_icon.py is unused now (deleting it was blocked by a safety check; left in place).
+
+## v0.6.0 (2026-11-26)
+- Network like Chrome (clipsaver/net.py): system proxy -> user-added -> detected local proxy ports (HTTP or SOCKS5, type sniffed/auto-corrected) -> direct. Switch off = direct only. Working route remembered in memory per host.
+- Settings > Network = proxy switch + list with live "可用 · ms / 无法使用" per route (user's iOS-style design).
+- Threads videos missing from the embed page (e.g. shared from Instagram) are read by a hidden pywebview window (window mode only). Found via the user's failing share link.
+- tests/net_check.py: stand-in HTTP/SOCKS5 proxies, 11 live scenarios; runs in CI. window_check also reads such a Threads post through the hidden window.

@@ -16,7 +16,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import __version__, extract
+from . import __version__, extract, net
 
 HERE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent.parent))
 UI_FILE = HERE / 'clipsaver' / 'ui.html'
@@ -48,16 +48,17 @@ def unique_path(folder, stem, ext='.mp4'):
     return p
 
 
-def run_download(job_id, url, stem, site, proxy):
+def run_download(job_id, url, stem, site, enabled, manual):
     job = JOBS[job_id]
     referer = 'https://x.com/' if site == 'x' else 'https://www.threads.com/'
-    opener = extract.make_opener(proxy)
     folder = save_dir()
     target = unique_path(folder, safe_name(stem))
     part = target.with_suffix('.mp4.part')
     try:
         req = urllib.request.Request(url, headers={'User-Agent': extract.UA, 'Referer': referer})
-        with opener.open(req, timeout=30) as r, open(part, 'wb') as f:
+        resp, route = net.open_url(req, enabled, manual, timeout=30)
+        job['route'] = route.describe()
+        with resp as r, open(part, 'wb') as f:
             total = int(r.headers.get('Content-Length') or 0)
             job['total'] = total
             while True:
@@ -79,9 +80,11 @@ def run_download(job_id, url, stem, site, proxy):
             pass
         msg = str(e)
         if 'HTTP Error 403' in msg or 'HTTP Error 410' in msg:
-            msg = '视频地址过期了，请重新点「查找视频」再下载'
+            msg = '视频地址过期了，请重新点「查找」再下载'
+        elif isinstance(e, net.NetError):
+            msg = '连不上视频服务器。' + msg
         elif 'urlopen error' in msg or 'timed out' in msg:
-            msg = '连不上视频服务器。如果需要代理，请在设置里填写后重试'
+            msg = '下载中途网络断了，请再试一次'
         job.update(state='error', error=msg)
 
 
@@ -177,12 +180,22 @@ class Handler(BaseHTTPRequestHandler):
             return
         LAST_PING[0] = time.time()
         data = self._json()
-        proxy = (data.get('proxy') or '').strip() or None
-        if proxy and not re.match(r'^(https?|socks5h?)://', proxy):
-            proxy = 'http://' + proxy
-        if self.path == '/api/inspect':
+        if not isinstance(data, dict):
+            data = {}
+        cfg = data.get('net') if isinstance(data.get('net'), dict) else {}
+        enabled = cfg.get('on', True) is not False
+        manual = [str(p) for p in (cfg.get('proxies') or []) if isinstance(p, str)][:20]
+        if self.path == '/api/net':
+            self._send(200, net.status(enabled, manual))
+        elif self.path == '/api/check-proxy':
+            p = net.fix_type(net.parse_proxy(data.get('proxy')))
+            if not p:
+                self._send(200, {'ok': False, 'error': '地址格式不对，例如 127.0.0.1:7890 或 socks5://127.0.0.1:7891'})
+            else:
+                self._send(200, {'proxy': p, **net.check(net.Route('manual', p))})
+        elif self.path == '/api/inspect':
             try:
-                self._send(200, extract.inspect(data.get('url', ''), proxy))
+                self._send(200, extract.inspect(data.get('url', ''), enabled, manual))
             except extract.ExtractError as e:
                 self._send(200, {'error': str(e)})
             except Exception as e:  # noqa: BLE001
@@ -196,7 +209,7 @@ class Handler(BaseHTTPRequestHandler):
             with JOBS_LOCK:
                 JOBS[job_id] = {'id': job_id, 'state': 'running', 'done': 0, 'total': 0}
             threading.Thread(target=run_download, daemon=True, args=(
-                job_id, url, data.get('name') or 'video', data.get('site') or 'x', proxy)).start()
+                job_id, url, data.get('name') or 'video', data.get('site') or 'x', enabled, manual)).start()
             self._send(200, {'job': job_id})
         elif self.path == '/api/reveal':
             path = data.get('path') or ''
@@ -253,6 +266,56 @@ def close_app(httpd):
         httpd.shutdown()
 
 
+READ_JS = r"""
+(() => {
+  const code = %s;
+  const boxes = [...document.querySelectorAll('[data-pressable-container]')];
+  // the main post = the first block that links to this post's own code
+  const main = boxes.find((b) => b.querySelector('a[href*="/post/' + code + '"]')) || boxes[0];
+  const vids = main ? [...main.querySelectorAll('video')] : [];
+  return JSON.stringify({ready: document.readyState, vids: vids.map((v) => ({
+    src: v.currentSrc || v.src || '', poster: v.poster || '',
+    w: v.videoWidth || 0, h: v.videoHeight || 0, d: isFinite(v.duration) ? v.duration : 0}))});
+})()
+"""
+READ_LOCK = threading.Lock()
+
+
+def read_with_browser(page_url, code, timeout=20):
+    """Open the post in a hidden window (same engine and system proxy as a
+    browser), wait for its video to load, and return the video addresses."""
+    import webview
+    with READ_LOCK:   # one hidden window at a time
+        w = webview.create_window('ClipSaver reader', page_url, hidden=True)
+        best = []
+        try:
+            end = time.time() + timeout
+            while time.time() < end:
+                time.sleep(0.5)
+                try:
+                    r = json.loads(w.evaluate_js(READ_JS % json.dumps(code)) or '{}')
+                except Exception:  # noqa: BLE001 - page still loading
+                    continue
+                vids = [v for v in r.get('vids', []) if v.get('src', '').startswith('https://')]
+                if vids:
+                    best = vids
+                    if r.get('ready') == 'complete':
+                        time.sleep(1.0)    # let other videos of a carousel appear too
+                        try:
+                            r = json.loads(w.evaluate_js(READ_JS % json.dumps(code)) or '{}')
+                            more = [v for v in r.get('vids', []) if v.get('src', '').startswith('https://')]
+                            best = more if len(more) > len(best) else best
+                        except Exception:  # noqa: BLE001
+                            pass
+                        break
+        finally:
+            try:
+                w.destroy()
+            except Exception:  # noqa: BLE001
+                pass
+        return best
+
+
 def run_window(url, httpd):
     """Show the UI in a native app window. Returns False if that is not possible here."""
     try:
@@ -264,10 +327,12 @@ def run_window(url, httpd):
                                        min_size=(760, 560), background_color='#0e1014')
         WINDOW.append(window)
         window.events.closed += lambda *a: exit_soon()
+        extract.browser_reader = read_with_browser
         threading.Thread(target=httpd.serve_forever, daemon=True).start()
         webview.start()
     except Exception:  # noqa: BLE001 - e.g. WebView2 missing: fall back to the browser
         WINDOW.clear()
+        extract.browser_reader = None
         return False
     httpd.shutdown()
     return True

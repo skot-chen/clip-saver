@@ -36,6 +36,17 @@ try:
     print('window opened:', shown.get('window'))
     if not shown.get('window'):
         sys.exit('FAIL: no app window (fell back to browser)')
+    # A Threads video shared over from Instagram: missing from the embed page,
+    # so it must be read through the hidden browser window.
+    req = urllib.request.Request(BASE + '/api/inspect', data=json.dumps(
+        {'url': 'https://www.threads.com/@tow_2021/post/DgMngcbEwyA'}).encode(),
+        headers={'Content-Type': 'application/json'})
+    with opener.open(req, timeout=90) as r:
+        found = json.load(r)
+    print('hidden-window read:', found.get('error') or (len(found['videos']), found.get('via_browser')))
+    if found.get('error') or not found.get('via_browser') or not found['videos'][0]['variants'][0]['url'].startswith('https://'):
+        post('/api/quit')
+        sys.exit('FAIL: could not read the video through the hidden window')
     post('/api/quit')
     proc.wait(timeout=20)
     print('OK  window closed and app exited, code', proc.returncode)
