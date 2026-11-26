@@ -204,8 +204,16 @@ def bring_to_front():
             pass
 
 
+def exit_soon(seconds=3):
+    # Safety net: if the GUI loop does not wind down by itself, end the process anyway.
+    t = threading.Timer(seconds, os._exit, args=(0,))
+    t.daemon = True
+    t.start()
+
+
 def close_app(httpd):
     if WINDOW:
+        exit_soon()
         for w in WINDOW:
             w.destroy()      # closing the window ends webview.start(), then main() stops the server
     else:
@@ -222,6 +230,7 @@ def run_window(url, httpd):
         window = webview.create_window('ClipSaver', url, width=880, height=780,
                                        min_size=(420, 520), background_color='#f6f5f2')
         WINDOW.append(window)
+        window.events.closed += lambda *a: exit_soon()
         threading.Thread(target=httpd.serve_forever, daemon=True).start()
         webview.start()
     except Exception:  # noqa: BLE001 - e.g. WebView2 missing: fall back to the browser
