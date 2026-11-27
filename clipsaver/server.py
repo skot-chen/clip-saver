@@ -367,6 +367,23 @@ def read_with_browser(page_url, code, cancel=None, timeout=12):
         return best
 
 
+def storage_dir():
+    """Where the window keeps its settings: %APPDATA%/ClipSaver on Windows,
+    ~/Library/Application Support/ClipSaver on Mac (WebKit uses its own store there)."""
+    if sys.platform == 'win32':
+        base = os.environ.get('APPDATA') or os.path.expanduser('~')
+    elif sys.platform == 'darwin':
+        base = os.path.expanduser('~/Library/Application Support')
+    else:
+        base = os.environ.get('XDG_DATA_HOME') or os.path.expanduser('~/.local/share')
+    path = os.path.join(base, 'ClipSaver')
+    try:
+        os.makedirs(path, exist_ok=True)
+    except OSError:
+        return None
+    return path
+
+
 def run_window(url, httpd):
     """Show the UI in a native app window. Returns False if that is not possible here."""
     try:
@@ -390,7 +407,9 @@ def run_window(url, httpd):
         window.events.loaded += lambda *a: threading.Thread(target=warm_reader, daemon=True).start()
         extract.browser_reader = read_with_browser
         threading.Thread(target=httpd.serve_forever, daemon=True).start()
-        webview.start()
+        # private_mode=False keeps the window's localStorage (proxies, theme, language)
+        # after the app closes; pywebview's default private mode wipes it every time.
+        webview.start(private_mode=False, storage_path=storage_dir())
     except Exception:  # noqa: BLE001 - e.g. WebView2 missing: fall back to the browser
         WINDOW.clear()
         extract.browser_reader = None

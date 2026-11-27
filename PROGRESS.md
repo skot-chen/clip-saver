@@ -58,3 +58,6 @@
 - Fail fast on blocked networks: per-step timeout 6s when several routes, fetch 8s, downloads 12s, hidden reader 12s; proxy type is detected only on add/test (known_type from cache per request) - silent proxy fallback 11.4s -> 6.4s.
 - Hidden reader window created 1.5s after main window loaded (not during start-up).
 - Windows start-up measured: first launch after download 12.6s (Defender scan, once per version), later 2.2s; folder build only 9.0/1.9s -> kept single exe, documented.
+
+## v0.7.3 (2026-11-27)
+- Proxies, theme and language survive closing the app: pywebview private mode (default) wiped localStorage on exit; now webview.start(private_mode=False, storage_path=%APPDATA%/ClipSaver).
